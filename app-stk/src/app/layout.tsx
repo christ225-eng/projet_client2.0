@@ -33,6 +33,9 @@ export const viewport: Viewport = {
   themeColor: "#f6f1e6",
   width: "device-width",
   initialScale: 1,
+  // Keeps the layout stable when the iOS Safari URL bar slides; pairs with
+  // min-h-screen below so the organic background never gets cropped.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -40,7 +43,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr" className={`${inter.variable} ${display.variable} h-full`}>
-      <body className="relative min-h-screen flex flex-col antialiased">
+      <body className="relative flex min-h-screen w-full flex-col overflow-x-hidden antialiased">
         <OrganicBackground />
         {children}
       </body>

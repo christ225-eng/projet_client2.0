@@ -13,7 +13,8 @@ export function Header({ rightSlot, centerSlot, className }: HeaderProps) {
   return (
     <header
       className={cn(
-        "relative z-10 flex items-center justify-between px-8 py-6 md:px-12 md:py-8",
+        "relative z-10 flex items-center justify-between gap-2",
+        "px-4 py-4 sm:px-8 sm:py-6 md:px-12 md:py-8",
         className,
       )}
     >
@@ -30,7 +31,7 @@ export function Header({ rightSlot, centerSlot, className }: HeaderProps) {
         </div>
       ) : null}
 
-      <div className="text-sm text-ash">{rightSlot}</div>
+      <div className="min-w-0 text-xs sm:text-sm text-ash">{rightSlot}</div>
     </header>
   );
 }

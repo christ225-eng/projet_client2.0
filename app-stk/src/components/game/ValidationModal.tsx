@@ -83,7 +83,7 @@ export function ValidationModal({
           <motion.div
             role="dialog"
             aria-modal="true"
-            className={`relative w-full max-w-2xl rounded-3xl bg-surface-modal p-10 ${
+            className={`relative w-full max-w-2xl rounded-2xl bg-surface-modal p-6 sm:p-8 md:rounded-3xl md:p-10 ${
               isCorrect ? "shadow-[var(--shadow-modal)]" : "ring-error-soft"
             }`}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -96,7 +96,7 @@ export function ValidationModal({
             }}
           >
             <motion.h2
-              className="text-center text-2xl font-semibold tracking-tight text-bone"
+              className="text-center text-lg font-semibold tracking-tight text-bone sm:text-xl md:text-2xl"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05, ease: easeOrganic }}
@@ -105,7 +105,7 @@ export function ValidationModal({
             </motion.h2>
 
             <motion.div
-              className="mt-8 flex items-center justify-center gap-6 md:gap-8"
+              className="mt-6 flex items-center justify-center gap-3 sm:mt-8 sm:gap-6 md:gap-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.15, ease: easeOrganic }}
@@ -113,7 +113,7 @@ export function ValidationModal({
               <CardThumb card={application} kind="Application" delay={0.15} highlight={isCorrect} />
 
               <motion.span
-                className={`text-3xl ${
+                className={`text-2xl sm:text-3xl ${
                   isCorrect ? "text-emerald drop-shadow-[0_0_12px_rgba(48,162,128,0.45)]" : "text-bone/50"
                 }`}
                 aria-hidden
@@ -129,21 +129,25 @@ export function ValidationModal({
 
             {/* Labels under each thumb */}
             <motion.div
-              className="mx-auto mt-5 flex max-w-xl items-center justify-center gap-12 text-center text-xs uppercase tracking-[0.22em] text-bone/85"
+              className="mx-auto mt-4 flex max-w-xl items-start justify-center gap-3 px-1 text-center text-[10px] uppercase tracking-[0.18em] text-bone/85 sm:mt-5 sm:gap-12 sm:text-xs sm:tracking-[0.22em]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.45, ease: easeOrganic }}
             >
-              <span className="w-32 md:w-36">{application?.label ?? "Application"}</span>
+              <span className="w-[28vw] max-w-[9rem] leading-snug sm:w-32 md:w-36">
+                {application?.label ?? "Application"}
+              </span>
               <span className="invisible">✓</span>
-              <span className="w-32 md:w-36">{vivant?.label ?? "Vivant"}</span>
+              <span className="w-[28vw] max-w-[9rem] leading-snug sm:w-32 md:w-36">
+                {vivant?.label ?? "Vivant"}
+              </span>
             </motion.div>
 
             <AnimatePresence>
               {explanation ? (
                 <motion.p
                   key="explanation"
-                  className="mx-auto mt-6 max-w-xl text-center text-sm leading-relaxed text-bone/95"
+                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-bone/95 sm:mt-6 sm:text-sm"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
@@ -155,7 +159,7 @@ export function ValidationModal({
             </AnimatePresence>
 
             <motion.div
-              className="mt-8 flex justify-center"
+              className="mt-6 flex justify-center sm:mt-8"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -171,7 +175,7 @@ export function ValidationModal({
 
             {!isCorrect ? (
               <motion.div
-                className="mt-8 flex justify-end gap-3"
+                className="mt-6 flex flex-wrap justify-end gap-2 sm:mt-8 sm:gap-3"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.6, ease: easeOrganic }}
@@ -204,7 +208,7 @@ function CardThumb({
 }) {
   return (
     <motion.div
-      className="relative h-32 w-40 md:h-36 md:w-44 overflow-hidden rounded-xl bg-surface-elevated outline outline-1 -outline-offset-1 outline-mineral/40"
+      className="relative h-20 w-[28vw] max-w-[9rem] overflow-hidden rounded-xl bg-surface-elevated outline outline-1 -outline-offset-1 outline-mineral/40 sm:h-32 sm:w-40 md:h-36 md:w-44"
       initial={{ opacity: 0, scale: 0.92, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.55, delay, ease: easeOrganic }}
@@ -219,7 +223,7 @@ function CardThumb({
           src={card.imageSrc}
           alt={card.label}
           fill
-          sizes="(max-width: 768px) 160px, 176px"
+          sizes="(max-width: 640px) 30vw, (max-width: 768px) 160px, 176px"
           quality={92}
           className="object-cover object-center"
         />

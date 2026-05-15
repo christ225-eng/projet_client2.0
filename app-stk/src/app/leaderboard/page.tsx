@@ -55,7 +55,7 @@ export default function LeaderboardPage() {
     <>
       <Header rightSlot={<LevelsBadge />} />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center px-6 md:px-8 pb-12 pt-4">
+      <main className="relative z-10 flex flex-1 flex-col items-center px-4 pb-10 pt-2 sm:px-6 sm:pb-12 sm:pt-4 md:px-8">
         <Reveal>
           <p className="text-[11px] tracking-[0.32em] uppercase text-clay">
             Tous niveaux complétés
@@ -100,7 +100,7 @@ export default function LeaderboardPage() {
 
 function LevelsBadge() {
   return (
-    <span className="inline-flex items-center rounded-full bg-bone/75 px-4 py-1.5 text-sm text-ash backdrop-blur-sm border border-mineral/40">
+    <span className="inline-flex items-center rounded-full bg-bone/75 px-3 py-1 text-xs text-ash backdrop-blur-sm border border-mineral/40 sm:px-4 sm:py-1.5 sm:text-sm">
       Niveaux&nbsp;:
       <span className="ml-1 font-semibold text-graphite tabular-nums">5/5</span>
     </span>
@@ -112,7 +112,7 @@ function LevelsBadge() {
 function EmptyLeaderboard() {
   return (
     <motion.div
-      className="mt-12 flex w-full max-w-md flex-col items-center rounded-3xl bg-bone/75 px-8 py-14 text-center backdrop-blur-md"
+      className="mt-10 flex w-full max-w-md flex-col items-center rounded-3xl bg-bone/75 px-6 py-10 text-center backdrop-blur-md sm:mt-12 sm:px-8 sm:py-14"
       style={{
         boxShadow:
           "0 1px 2px rgba(42,39,36,0.04), 0 16px 40px rgba(42,39,36,0.10)",
@@ -123,14 +123,14 @@ function EmptyLeaderboard() {
     >
       <span
         aria-hidden
-        className="grid h-14 w-14 place-items-center rounded-full bg-emerald/10 text-emerald"
+        className="grid h-12 w-12 place-items-center rounded-full bg-emerald/10 text-emerald sm:h-14 sm:w-14"
       >
-        <LeafIcon className="h-7 w-7" />
+        <LeafIcon className="h-6 w-6 sm:h-7 sm:w-7" />
       </span>
-      <h2 className="mt-5 text-lg font-semibold tracking-tight text-graphite">
+      <h2 className="mt-4 text-base font-semibold tracking-tight text-graphite sm:mt-5 sm:text-lg">
         Aucun score pour le moment
       </h2>
-      <p className="mt-2 max-w-xs text-sm leading-relaxed text-ash">
+      <p className="mt-2 max-w-xs text-xs leading-relaxed text-ash sm:text-sm">
         Soyez le premier à compléter les 5 niveaux pour rejoindre le
         classement.
       </p>
@@ -157,7 +157,7 @@ function Podium({
   const third = top3[2];
 
   return (
-    <div className="mt-10 mb-12 flex w-full max-w-xl items-end justify-center gap-3 md:gap-4">
+    <div className="mb-10 mt-8 flex w-full max-w-xl items-end justify-center gap-2 sm:mb-12 sm:mt-10 sm:gap-3 md:gap-4">
       {second ? (
         <PodiumCard rank={2} entry={second} isMe={myIndex === 1} delay={0.1} />
       ) : (
@@ -204,8 +204,8 @@ function PodiumCard({
       animate={{ opacity: 1, y: emphasized ? -14 : 0 }}
       transition={{ duration: 0.7, delay, ease: easeOrganic }}
       className={cn(
-        "relative flex w-28 md:w-36 flex-col items-center rounded-2xl px-3 text-center",
-        emphasized ? "py-7" : "py-5",
+        "relative flex w-[31vw] max-w-[9rem] flex-col items-center rounded-2xl px-2 text-center sm:w-28 sm:px-3 md:w-36",
+        emphasized ? "py-5 sm:py-6 md:py-7" : "py-4 sm:py-5",
         emphasized
           ? "bg-emerald text-bone"
           : "bg-bone/85 text-graphite backdrop-blur-md",
@@ -219,7 +219,7 @@ function PodiumCard({
     >
       <span
         className={cn(
-          "inline-flex h-7 items-center rounded-full px-3 text-[11px] font-semibold tracking-wide",
+          "inline-flex h-6 items-center rounded-full px-2.5 text-[10px] font-semibold tracking-wide sm:h-7 sm:px-3 sm:text-[11px]",
           emphasized
             ? "bg-bone/95 text-emerald"
             : "bg-surface-elevated text-clay outline outline-1 -outline-offset-1 outline-mineral/40",
@@ -230,7 +230,7 @@ function PodiumCard({
 
       <p
         className={cn(
-          "mt-4 text-[10px] tracking-[0.22em] uppercase truncate max-w-full",
+          "mt-3 text-[9px] tracking-[0.22em] uppercase truncate max-w-full sm:mt-4 sm:text-[10px]",
           emphasized ? "text-bone/80" : "text-clay",
         )}
       >
@@ -239,7 +239,7 @@ function PodiumCard({
 
       <p
         className={cn(
-          "mt-2 text-xl md:text-2xl font-semibold tabular-nums",
+          "mt-2 text-lg font-semibold tabular-nums sm:text-xl md:text-2xl",
           emphasized ? "text-bone" : "text-graphite",
         )}
       >
@@ -248,7 +248,7 @@ function PodiumCard({
 
       <div
         className={cn(
-          "mt-3 inline-flex items-center gap-1.5 text-[11px]",
+          "mt-2 inline-flex items-center gap-1 text-[10px] sm:mt-3 sm:gap-1.5 sm:text-[11px]",
           emphasized ? "text-bone/85" : "text-ash",
         )}
       >
@@ -270,21 +270,21 @@ function PodiumSlot({
   return (
     <div
       className={cn(
-        "flex w-28 md:w-36 flex-col items-center rounded-2xl border border-dashed border-mineral/40 bg-bone/30 px-3 text-center",
-        emphasized ? "py-7 -translate-y-3.5" : "py-5",
+        "flex w-[31vw] max-w-[9rem] flex-col items-center rounded-2xl border border-dashed border-mineral/40 bg-bone/30 px-2 text-center sm:w-28 sm:px-3 md:w-36",
+        emphasized ? "py-5 -translate-y-3 sm:py-6 md:py-7" : "py-4 sm:py-5",
       )}
       aria-hidden
     >
-      <span className="inline-flex h-7 items-center rounded-full bg-surface-elevated px-3 text-[11px] font-semibold tracking-wide text-clay/70">
+      <span className="inline-flex h-6 items-center rounded-full bg-surface-elevated px-2.5 text-[10px] font-semibold tracking-wide text-clay/70 sm:h-7 sm:px-3 sm:text-[11px]">
         {rankLabel}
       </span>
-      <p className="mt-4 text-[10px] tracking-[0.22em] uppercase text-clay/50">
+      <p className="mt-3 text-[9px] tracking-[0.22em] uppercase text-clay/50 sm:mt-4 sm:text-[10px]">
         —
       </p>
-      <p className="mt-2 text-xl font-semibold tabular-nums text-clay/35">
+      <p className="mt-2 text-lg font-semibold tabular-nums text-clay/35 sm:text-xl">
         --
       </p>
-      <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-clay/40">
+      <div className="mt-2 inline-flex items-center gap-1 text-[10px] text-clay/40 sm:mt-3 sm:gap-1.5 sm:text-[11px]">
         <ClockIcon className="h-3 w-3" />
         <span className="tabular-nums">--:--</span>
       </div>
@@ -341,7 +341,7 @@ function RankRow({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5, delay, ease: easeOrganic }}
       className={cn(
-        "relative flex items-center gap-3 md:gap-4 rounded-2xl px-3 py-2.5 backdrop-blur-sm",
+        "relative flex items-center gap-2.5 rounded-2xl px-2.5 py-2 backdrop-blur-sm sm:gap-3 sm:px-3 sm:py-2.5 md:gap-4",
         isMe
           ? "bg-emerald/10 outline outline-2 -outline-offset-1 outline-emerald/55"
           : "bg-bone/70",
@@ -357,7 +357,7 @@ function RankRow({
 
       <span
         className={cn(
-          "flex-1 truncate text-sm tracking-tight",
+          "flex-1 truncate text-[13px] tracking-tight sm:text-sm",
           isMe ? "font-semibold text-graphite" : "text-graphite/90",
         )}
       >
@@ -365,12 +365,12 @@ function RankRow({
       </span>
 
       <div className="flex flex-col items-end shrink-0">
-        <span className="text-base md:text-lg font-semibold text-clay tabular-nums">
+        <span className="text-sm font-semibold text-clay tabular-nums sm:text-base md:text-lg">
           {entry.score.toLocaleString("fr-FR")}
         </span>
-        <span className="mt-0.5 text-[11px] text-ash tabular-nums">
+        <span className="mt-0.5 text-[10px] text-ash tabular-nums sm:text-[11px]">
           {formatDuration(entry.temps)} ·&nbsp;
-          {entry.erreurs} erreur{entry.erreurs > 1 ? "s" : ""}
+          {entry.erreurs} err.
         </span>
       </div>
     </motion.li>
@@ -381,7 +381,7 @@ function RankBadge({ rank, isMe }: { rank: number; isMe: boolean }) {
   return (
     <span
       className={cn(
-        "grid h-10 w-10 shrink-0 place-items-center rounded-xl text-sm font-semibold text-bone tabular-nums",
+        "grid h-9 w-9 shrink-0 place-items-center rounded-xl text-xs font-semibold text-bone tabular-nums sm:h-10 sm:w-10 sm:text-sm",
         isMe ? "bg-emerald" : "bg-clay",
       )}
       style={
@@ -401,7 +401,7 @@ function Avatar({ name, isMe }: { name: string; isMe: boolean }) {
   return (
     <span
       className={cn(
-        "grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold",
+        "hidden h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-semibold sm:grid",
         isMe ? "bg-emerald/20 text-emerald" : "bg-mineral/30 text-graphite",
       )}
       aria-hidden

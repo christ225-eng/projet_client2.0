@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Pair, Card } from "@/game-engine/types";
@@ -11,9 +12,39 @@ import { useGameStore } from "@/stores/gameStore";
 import { useScoreStore, getElapsedSeconds } from "@/stores/scoreStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { saveScore } from "@/lib/leaderboard";
-import { Board } from "@/components/game/Board";
 import { ValidationModal } from "@/components/game/ValidationModal";
 import { Button } from "@/components/ui/Button";
+
+/**
+ * Board is rendered client-only. The shuffle in PlayClient uses
+ * `Math.random()`, which would produce different orders during SSR and
+ * hydration and break React's tree reconciliation (cards mis-aligned,
+ * wrong cards getting marked as "resolved"). Skipping SSR for the board
+ * is cleaner than seeded shuffles or post-mount setState dances.
+ */
+const Board = dynamic(
+  () => import("@/components/game/Board").then((m) => ({ default: m.Board })),
+  {
+    ssr: false,
+    loading: () => <BoardSkeleton />,
+  },
+);
+
+function BoardSkeleton() {
+  return (
+    <div
+      className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-3 sm:gap-5 md:grid-cols-4 md:gap-7"
+      aria-busy
+    >
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          className="aspect-[4/3] w-full animate-pulse rounded-xl bg-bone/40 outline outline-1 -outline-offset-1 outline-mineral/20 md:rounded-2xl"
+        />
+      ))}
+    </div>
+  );
+}
 
 interface PlayClientProps {
   level: 1 | 2 | 3 | 4 | 5;
@@ -139,9 +170,9 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:mb-6">
         <motion.span
-          className="inline-flex items-center rounded-full bg-bone/75 px-4 py-1.5 text-sm font-medium text-graphite backdrop-blur-sm border border-mineral/40"
+          className="inline-flex items-center rounded-full bg-bone/75 px-3 py-1 text-xs font-medium text-graphite backdrop-blur-sm border border-mineral/40 sm:px-4 sm:py-1.5 sm:text-sm"
           initial={{ opacity: 0, x: -8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: easeOrganic }}
@@ -151,17 +182,20 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
 
         {/* Per spec: this is a PAIR counter, NOT a numeric score */}
         <motion.span
-          className="inline-flex items-center rounded-full bg-bone/75 px-4 py-1.5 text-sm text-ash backdrop-blur-sm border border-mineral/40"
+          className="inline-flex items-center rounded-full bg-bone/75 px-3 py-1 text-xs text-ash backdrop-blur-sm border border-mineral/40 sm:px-4 sm:py-1.5 sm:text-sm"
           initial={{ opacity: 0, x: 8 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: easeOrganic }}
         >
-          Paires&nbsp;: <span className="ml-1 font-semibold text-graphite tabular-nums">{resolvedPairs.length}/{pairsCount}</span>
+          Paires&nbsp;:
+          <span className="ml-1 font-semibold text-graphite tabular-nums">
+            {resolvedPairs.length}/{pairsCount}
+          </span>
         </motion.span>
       </div>
 
       <motion.h2
-        className="text-center text-base md:text-lg font-medium text-graphite mb-8"
+        className="mb-5 text-center text-sm font-medium leading-snug text-graphite sm:mb-7 sm:text-base md:mb-8 md:text-lg"
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.1, ease: easeOrganic }}

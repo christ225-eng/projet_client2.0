@@ -17,13 +17,12 @@ interface CardProps {
  * Single play-card.
  *
  *   • aspect-[4/3] keeps source photos' landscape composition.
- *   • A permanent translucent caption pill sits at the bottom — the label
- *     is a separate UI element (never part of the image), with backdrop
- *     blur for legibility over any photo.
- *   • Hover lifts the card and gently zooms the image (1200ms) — slow,
- *     contemplative, not arcade.
- *   • Resolved cards fade + desaturate so the eye moves to the remaining
- *     pairs.
+ *   • Permanent translucent caption pill at the bottom — never burned
+ *     into the image. Labels wrap to two lines on mobile rather than
+ *     truncating to "P…", so the player never loses the word.
+ *   • Hover lifts the card and gently zooms the image (desktop only;
+ *     hover affordances are pointer-aware so they don't fire on touch).
+ *   • Resolved cards fade + desaturate so the eye moves to remaining pairs.
  */
 export function GameCard({
   card,
@@ -44,7 +43,7 @@ export function GameCard({
       aria-label={card.label}
       aria-pressed={selected}
       className={cn(
-        "group relative aspect-[4/3] w-full overflow-hidden rounded-2xl text-left",
+        "group relative aspect-[4/3] w-full overflow-hidden rounded-xl md:rounded-2xl text-left",
         "bg-bone/40 transition-[box-shadow,outline-color] duration-[var(--duration-base)] ease-[var(--ease-organic)]",
         "shadow-[0_2px_4px_rgba(42,39,36,0.04),0_12px_32px_rgba(42,39,36,0.06)]",
         "outline outline-1 -outline-offset-1 outline-mineral/30",
@@ -61,7 +60,7 @@ export function GameCard({
           src={card.imageSrc}
           alt=""
           fill
-          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 22vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 22vw"
           quality={92}
           className={cn(
             "object-cover object-center",
@@ -76,14 +75,16 @@ export function GameCard({
       )}
 
       {/* Permanent caption pill — separate UI element, never burned into the image */}
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+      <div className="pointer-events-none absolute inset-x-2 sm:inset-x-3 bottom-2 sm:bottom-3 flex justify-center">
         <span
           className={cn(
-            "inline-block max-w-full truncate rounded-lg px-3 py-1.5",
+            "inline-block max-w-full rounded-md sm:rounded-lg",
+            "px-2 py-1 sm:px-3 sm:py-1.5",
             "bg-bone/85 backdrop-blur-md",
-            "text-[13px] md:text-sm font-medium tracking-tight text-graphite",
+            "text-[11px] leading-tight sm:text-[13px] md:text-sm font-medium tracking-tight text-graphite",
             "shadow-[0_1px_2px_rgba(42,39,36,0.06),0_4px_12px_rgba(42,39,36,0.08)]",
             "outline outline-1 -outline-offset-1 outline-mineral/25",
+            "line-clamp-2 text-center",
           )}
         >
           {card.label}

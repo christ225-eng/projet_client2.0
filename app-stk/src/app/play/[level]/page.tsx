@@ -36,7 +36,7 @@ export default async function PlayLevelPage({ params }: PageParams) {
         }
       />
 
-      <main className="relative z-10 flex flex-1 flex-col px-8 pb-8">
+      <main className="relative z-10 flex flex-1 flex-col px-4 pb-6 sm:px-6 sm:pb-8 md:px-8">
         <PlayClient level={config.level} pairsCount={config.pairsCount} pairs={pairs} />
       </main>
 

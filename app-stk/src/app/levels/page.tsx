@@ -25,21 +25,21 @@ export default function LevelsPage() {
     <>
       <Header rightSlot={<span className="text-sm tracking-wide text-ash">Niveaux</span>} />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-8">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 md:px-8">
         <Reveal>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-graphite text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-graphite text-center sm:text-3xl md:text-4xl">
             Choisissez un niveau
           </h1>
         </Reveal>
 
         <Reveal delay={0.2}>
-          <p className="mt-3 max-w-md text-center text-sm text-ash">
+          <p className="mt-3 max-w-md text-center text-xs text-ash sm:text-sm">
             5 niveaux progressifs · 22 paires à découvrir
           </p>
         </Reveal>
 
         <Reveal delay={0.4}>
-          <ul className="mt-12 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <ul className="mt-8 grid w-full max-w-3xl grid-cols-2 gap-3 sm:mt-12 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             {LEVELS.map((lvl) => {
               const unlocked = isUnlocked(lvl.level);
               const done = completed.includes(lvl.level);
@@ -69,12 +69,20 @@ interface LevelTileProps {
 function LevelTile({ level, pairs, difficulty, unlocked, done }: LevelTileProps) {
   const content = (
     <>
-      <span className="text-xs uppercase tracking-[0.18em] text-clay">Niveau</span>
-      <span className="mt-1 block text-3xl font-semibold text-graphite">{level}</span>
-      <span className="mt-3 block text-xs text-ash">{pairs} paires</span>
-      <span className="mt-1 block text-xs text-ash/70">{difficulty}</span>
+      <span className="text-[10px] uppercase tracking-[0.18em] text-clay sm:text-xs">
+        Niveau
+      </span>
+      <span className="mt-1 block text-2xl font-semibold text-graphite sm:text-3xl">
+        {level}
+      </span>
+      <span className="mt-2 block text-[11px] text-ash sm:mt-3 sm:text-xs">
+        {pairs} paires
+      </span>
+      <span className="mt-0.5 block text-[10px] text-ash/70 sm:mt-1 sm:text-xs">
+        {difficulty}
+      </span>
       {done ? (
-        <span className="mt-3 inline-flex items-center gap-1 text-xs text-emerald">
+        <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-emerald sm:mt-3 sm:text-xs">
           ✓ terminé
         </span>
       ) : null}
@@ -82,7 +90,7 @@ function LevelTile({ level, pairs, difficulty, unlocked, done }: LevelTileProps)
   );
 
   const base = cn(
-    "block w-full rounded-2xl border bg-bone/70 px-5 py-6 text-left backdrop-blur-sm",
+    "block w-full rounded-2xl border bg-bone/70 px-4 py-5 text-left backdrop-blur-sm sm:px-5 sm:py-6",
     "transition-all duration-[var(--duration-base)] ease-[var(--ease-organic)]",
     unlocked
       ? "border-mineral/40 hover:border-clay/60 hover:bg-bone shadow-[var(--shadow-card)]"
