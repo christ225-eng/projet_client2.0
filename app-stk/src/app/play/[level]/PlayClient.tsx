@@ -1,0 +1,285 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import type { Pair, Card } from "@/game-engine/types";
+import { validateSelection } from "@/game-engine/validation";
+import { shuffle } from "@/game-engine/shuffle";
+import { calculateEndOfGameScore } from "@/game-engine/score";
+import { useGameStore } from "@/stores/gameStore";
+import { useScoreStore, getElapsedSeconds } from "@/stores/scoreStore";
+import { usePlayerStore } from "@/stores/playerStore";
+import { saveScore } from "@/lib/leaderboard";
+import { Board } from "@/components/game/Board";
+import { ValidationModal } from "@/components/game/ValidationModal";
+import { Button } from "@/components/ui/Button";
+
+interface PlayClientProps {
+  level: 1 | 2 | 3 | 4 | 5;
+  pairsCount: number;
+  pairs: readonly Pair[];
+}
+
+const easeOrganic = [0.22, 1, 0.36, 1] as const;
+
+/**
+ * Gameplay orchestrator — wires the game engine to the visual board and
+ * to the global score store. pendingSelection is derived purely from
+ * `selected`, so the modal opens / closes implicitly with no setState in
+ * effect.
+ *
+ * On the last pair of level 5: timer stops, final score is computed and
+ * persisted to localStorage so the leaderboard can render real data
+ * without a backend.
+ */
+export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
+  const router = useRouter();
+  const {
+    setLevel,
+    selected,
+    resolvedPairs,
+    selectCard,
+    clearSelection,
+    markPairResolved,
+    completeLevel,
+  } = useGameStore();
+  const { incrementErrors, registerPairFound, endTimer } = useScoreStore();
+
+  // Sync the store with the URL-driven level
+  useEffect(() => {
+    setLevel(level);
+  }, [level, setLevel]);
+
+  // Build & shuffle the two rows once per level
+  const { vivants, applications } = useMemo(() => {
+    const v = pairs.map<Card>((p) => ({ ...p.vivant, pairId: p.id, kind: "vivant" }));
+    const a = pairs.map<Card>((p) => ({ ...p.application, pairId: p.id, kind: "application" }));
+    return { vivants: shuffle(v), applications: shuffle(a) };
+  }, [pairs]);
+
+  // Derive the modal payload purely from the selection — no setState in effect
+  const pendingSelection = useMemo(() => {
+    if (selected.length !== 2) return null;
+    const [a, b] = selected as [Card, Card];
+    const pairId = validateSelection(a, b);
+    const pair = pairId === null ? undefined : pairs.find((p) => p.id === pairId);
+    return {
+      a,
+      b,
+      correct: pairId !== null,
+      explanation: pair?.explanation,
+    };
+  }, [selected, pairs]);
+
+  const finished = resolvedPairs.length === pairsCount;
+
+  // End-of-level / end-of-game side-effects. On the final level we also
+  // persist the score so the leaderboard reflects real, played games.
+  useEffect(() => {
+    if (!finished) return;
+    completeLevel(level);
+    if (level !== 5) return;
+
+    endTimer();
+
+    // Read the just-updated store snapshots; Zustand updates are synchronous.
+    const score = useScoreStore.getState();
+    const pseudo = usePlayerStore.getState().pseudo;
+    const seconds = getElapsedSeconds(score);
+    const finalScore = calculateEndOfGameScore({
+      errors: score.errors,
+      seconds,
+    });
+
+    if (pseudo) {
+      saveScore({
+        prenom: pseudo,
+        score: finalScore,
+        temps: seconds,
+        erreurs: score.errors,
+        date: new Date().toLocaleDateString("fr-FR"),
+      });
+    }
+  }, [finished, level, completeLevel, endTimer]);
+
+  function handleValidate() {
+    if (!pendingSelection) return;
+    if (pendingSelection.correct) {
+      markPairResolved(pendingSelection.a.pairId);
+      registerPairFound();
+    } else {
+      incrementErrors();
+      clearSelection();
+    }
+  }
+
+  function handleRetry() {
+    clearSelection();
+  }
+
+  function nextLevel() {
+    if (level === 5) {
+      router.push("/leaderboard");
+      return;
+    }
+    router.push(`/play/${level + 1}`);
+  }
+
+  const modalVivant = pendingSelection
+    ? pendingSelection.a.kind === "vivant"
+      ? pendingSelection.a
+      : pendingSelection.b
+    : undefined;
+  const modalApplication = pendingSelection
+    ? pendingSelection.a.kind === "application"
+      ? pendingSelection.a
+      : pendingSelection.b
+    : undefined;
+
+  return (
+    <>
+      <div className="mb-6 flex items-center justify-between">
+        <motion.span
+          className="inline-flex items-center rounded-full bg-bone/75 px-4 py-1.5 text-sm font-medium text-graphite backdrop-blur-sm border border-mineral/40"
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: easeOrganic }}
+        >
+          Niveau {level}
+        </motion.span>
+
+        {/* Per spec: this is a PAIR counter, NOT a numeric score */}
+        <motion.span
+          className="inline-flex items-center rounded-full bg-bone/75 px-4 py-1.5 text-sm text-ash backdrop-blur-sm border border-mineral/40"
+          initial={{ opacity: 0, x: 8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: easeOrganic }}
+        >
+          Paires&nbsp;: <span className="ml-1 font-semibold text-graphite tabular-nums">{resolvedPairs.length}/{pairsCount}</span>
+        </motion.span>
+      </div>
+
+      <motion.h2
+        className="text-center text-base md:text-lg font-medium text-graphite mb-8"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, delay: 0.1, ease: easeOrganic }}
+      >
+        Associez les éléments du vivant à leurs application humaines
+      </motion.h2>
+
+      <Board
+        vivants={vivants}
+        applications={applications}
+        resolvedPairIds={resolvedPairs}
+        selectedIds={selected.map((c) => c.id)}
+        onCardClick={selectCard}
+      />
+
+      <ValidationModal
+        open={pendingSelection !== null}
+        vivant={modalVivant}
+        application={modalApplication}
+        isCorrect={pendingSelection?.correct}
+        explanation={pendingSelection?.correct ? pendingSelection.explanation : undefined}
+        onValidate={handleValidate}
+        onRetry={handleRetry}
+        onCancel={handleRetry}
+      />
+
+      <AnimatePresence>
+        {finished ? <VictoryOverlay level={level} onNext={nextLevel} /> : null}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function VictoryOverlay({ level, onNext }: { level: number; onNext: () => void }) {
+  const isFinal = level === 5;
+
+  return (
+    <motion.div
+      key="finish"
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center px-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6, ease: easeOrganic }}
+    >
+      {/* Layered backdrop blur + ivory wash */}
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 backdrop-blur-md"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, rgba(246,241,230,0.85) 0%, rgba(246,241,230,0.55) 55%, rgba(246,241,230,0.25) 100%)",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.7, ease: easeOrganic }}
+      />
+
+      {/* Subtle sand/emerald bloom behind the headline */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute"
+        style={{
+          width: "min(70vw, 900px)",
+          height: "min(50vh, 500px)",
+          background:
+            "radial-gradient(ellipse, rgba(174,162,135,0.25) 0%, rgba(48,162,128,0.10) 35%, transparent 70%)",
+          filter: "blur(40px)",
+        }}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1, delay: 0.1, ease: easeOrganic }}
+      />
+
+      <div className="relative z-10 flex flex-col items-center">
+        <motion.p
+          className="text-xs tracking-[0.32em] uppercase text-clay"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.25, ease: easeOrganic }}
+        >
+          {isFinal ? "Exploration complète" : `Niveau ${level} terminé`}
+        </motion.p>
+
+        <motion.span
+          className="mt-3 font-display text-7xl md:text-8xl text-graphite"
+          style={{
+            transform: "rotate(-3deg)",
+            filter: "drop-shadow(0 6px 28px rgba(42,39,36,0.18))",
+          }}
+          initial={{ opacity: 0, scale: 0.92, rotate: -8 }}
+          animate={{ opacity: 1, scale: 1, rotate: -3 }}
+          transition={{ duration: 0.9, delay: 0.35, ease: easeOrganic }}
+        >
+          GAGNÉ&nbsp;!!
+        </motion.span>
+
+        <motion.p
+          className="mt-5 max-w-md text-center text-sm text-graphite/90 leading-relaxed"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.65, ease: easeOrganic }}
+        >
+          {isFinal
+            ? "Vous avez parcouru les 22 paires biomimétiques. Découvrez votre classement."
+            : `Toutes les paires du niveau ${level} ont été associées.`}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.85, ease: easeOrganic }}
+        >
+          <Button variant="primary" size="lg" className="mt-8" onClick={onNext}>
+            {isFinal ? "Voir le classement" : "Passer au niveau suivant"}
+          </Button>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}

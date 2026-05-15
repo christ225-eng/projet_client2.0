@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * STK Architecture — Apprendre du Vivant
+ * Design tokens — palette inspired by living matter
+ * Reference: brand_guidelines_updated.pdf + maquettes Mai 2026
+ * ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Core brand colors (from official guidelines) */
+  --color-sand: #aea287;
+  --color-ivory: #eaf4db;
+  --color-emerald: #30a280;
+
+  /* Extended natural palette (derived from background composition) */
+  --color-bone: #f6f1e6;
+  --color-mineral: #c9bfa8;
+  --color-fog: #e6dfcf;
+  --color-clay: #8c7d62;
+  --color-ash: #5c5751;
+  --color-graphite: #2a2724;
+  --color-moss: #6b8264;
+  --color-mist: #c8cfc4;
+
+  /* Functional — discreet, not gaming */
+  --color-error: #b85547;
+  --color-success: #30a280;
+
+  /* Surfaces */
+  --color-surface: #f6f1e6;
+  --color-surface-card: #ebe3d2;
+  --color-surface-elevated: #f9f5ec;
+  --color-surface-modal: #b3a98e;
+
+  /* Typography stacks */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), cursive;
+
+  /* Motion — slow, organic, contemplative */
+  --ease-organic: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-breath: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom non-utility properties (referenced via var() in components) */
+:root {
+  --duration-quick: 280ms;
+  --duration-base: 600ms;
+  --duration-slow: 1200ms;
+
+  --shadow-soft: 0 1px 2px rgba(42, 39, 36, 0.04),
+    0 8px 24px rgba(42, 39, 36, 0.06);
+  --shadow-card: 0 1px 1px rgba(42, 39, 36, 0.04),
+    0 4px 12px rgba(42, 39, 36, 0.05);
+  --shadow-elevated: 0 4px 12px rgba(42, 39, 36, 0.06),
+    0 16px 48px rgba(42, 39, 36, 0.1);
+  --shadow-modal: 0 8px 24px rgba(42, 39, 36, 0.12),
+    0 32px 96px rgba(42, 39, 36, 0.16);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: var(--color-surface);
+    color: var(--color-graphite);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Respect user motion preferences — contemplative is fine, motion-sick is not */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Discreet red border for validation modal — refined, not arcade */
+  .ring-error-soft {
+    box-shadow: 0 0 0 2px rgba(184, 85, 71, 0.55),
+      0 0 0 6px rgba(184, 85, 71, 0.1), 0 24px 80px rgba(42, 39, 36, 0.18);
+  }
+
+  /* Atmospheric glass — for translucent overlays */
+  .glass-bone {
+    background: rgba(246, 241, 230, 0.78);
+    backdrop-filter: blur(18px) saturate(110%);
+    -webkit-backdrop-filter: blur(18px) saturate(110%);
+  }
+}
