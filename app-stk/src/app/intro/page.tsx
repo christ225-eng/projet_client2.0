@@ -33,6 +33,8 @@ const STEPS: readonly Step[] = [
   },
 ];
 
+const easeOrganic = [0.22, 1, 0.36, 1] as const;
+
 export default function IntroPage() {
   const router = useRouter();
   const startTimer = useScoreStore((s) => s.startTimer);
@@ -54,43 +56,43 @@ export default function IntroPage() {
     <>
       <Header />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-8 text-center">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-6 text-center sm:px-8 sm:py-8">
         <Reveal>
-          <p className="mb-3 text-xs tracking-[0.28em] uppercase text-clay">
-            Onboarding
-          </p>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-graphite">
+          <h1 className="text-3xl font-semibold tracking-tight text-graphite sm:text-4xl md:text-5xl">
             Comment jouer&nbsp;?
           </h1>
         </Reveal>
 
-        <div className="relative mt-16 w-full max-w-2xl">
+        <Reveal delay={0.15}>
+          <p className="mt-3 max-w-md text-sm text-ash sm:mt-4 sm:text-base">
+            Trois étapes pour explorer le vivant.
+          </p>
+        </Reveal>
+
+        <div className="relative mt-10 w-full max-w-2xl sm:mt-14">
           <AnimatePresence mode="wait">
             <motion.div
               key={current.index}
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center gap-5 rounded-3xl bg-bone/85 px-5 py-5 text-left backdrop-blur-md"
+              transition={{ duration: 0.55, ease: easeOrganic }}
+              className="flex items-center gap-4 rounded-3xl bg-bone/90 p-4 text-left backdrop-blur-md sm:gap-5 sm:p-5"
               style={{
                 boxShadow:
                   "0 1px 2px rgba(42,39,36,0.04), 0 16px 40px rgba(42,39,36,0.08)",
               }}
             >
-              <Guide size={64} />
+              <Guide sizeClassName="h-12 w-12 sm:h-16 sm:w-16" />
 
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-[10px] tracking-[0.24em] uppercase text-clay">
                   Étape {current.index} / {STEPS.length}
                 </p>
-                <p className="mt-1 text-base md:text-lg font-semibold tracking-tight text-graphite">
+                <p className="mt-1 text-base font-semibold tracking-tight text-graphite sm:text-lg">
                   {current.title}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-ash">
+                <p className="mt-1.5 text-[13px] leading-relaxed text-ash sm:mt-2 sm:text-sm">
                   {current.body}
                 </p>
               </div>
@@ -99,12 +101,14 @@ export default function IntroPage() {
                 type="button"
                 onClick={next}
                 whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60"
+                whileTap={{ scale: 0.94 }}
+                transition={{ duration: 0.25, ease: easeOrganic }}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60 sm:h-11 sm:w-11"
                 aria-label={isLast ? "Commencer le jeu" : "Étape suivante"}
               >
-                <span aria-hidden className="text-graphite">→</span>
+                <span aria-hidden className="text-graphite">
+                  {isLast ? "✓" : "→"}
+                </span>
               </motion.button>
             </motion.div>
           </AnimatePresence>
@@ -117,42 +121,18 @@ export default function IntroPage() {
               return (
                 <motion.span
                   key={s.index}
-                  className="h-1.5 rounded-full"
+                  className="h-1.5 rounded-full bg-clay"
                   animate={{
                     width: active ? 32 : 6,
                     opacity: done || active ? 1 : 0.35,
-                    backgroundColor: active || done ? "var(--color-clay)" : "var(--color-clay)",
                   }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.5, ease: easeOrganic }}
                   aria-hidden
                 />
               );
             })}
           </div>
         </div>
-
-        <AnimatePresence>
-          {isLast ? (
-            <motion.button
-              key="cta"
-              type="button"
-              onClick={next}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="mt-10 inline-flex h-12 items-center rounded-full bg-surface-elevated border border-mineral/60 px-8 text-sm font-medium text-graphite hover:bg-bone hover:border-clay/60"
-              style={{
-                boxShadow:
-                  "0 1px 2px rgba(42,39,36,0.04), 0 8px 24px rgba(42,39,36,0.08)",
-              }}
-            >
-              Commencez le Jeu
-            </motion.button>
-          ) : null}
-        </AnimatePresence>
       </main>
 
       <Footer minimal />

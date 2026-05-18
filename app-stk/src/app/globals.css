@@ -22,8 +22,9 @@
   --color-moss: #6b8264;
   --color-mist: #c8cfc4;
 
-  /* Functional — discreet, not gaming */
+  /* Functional — refined, never arcade */
   --color-error: #b85547;
+  --color-error-strong: #cf3d2c;
   --color-success: #30a280;
 
   /* Surfaces */
@@ -91,10 +92,63 @@
       0 0 0 6px rgba(184, 85, 71, 0.1), 0 24px 80px rgba(42, 39, 36, 0.18);
   }
 
+  /* Premium error ring — stronger contrast for the validation modal wrong state */
+  .ring-error-vivid {
+    box-shadow: 0 0 0 3px rgba(207, 61, 44, 0.85),
+      0 0 0 9px rgba(207, 61, 44, 0.18), 0 24px 80px rgba(42, 39, 36, 0.22);
+  }
+
+  /* Card-level wrong glow — sits under the modal cards during error feedback */
+  .ring-error-card {
+    box-shadow: 0 0 0 2px rgba(207, 61, 44, 0.9),
+      0 6px 18px rgba(207, 61, 44, 0.28), 0 14px 36px rgba(42, 39, 36, 0.18);
+  }
+
+  /* Selected card — premium emerald aura matching the brand */
+  .ring-selected {
+    box-shadow: 0 0 0 3px rgba(48, 162, 128, 0.85),
+      0 0 0 7px rgba(48, 162, 128, 0.18),
+      0 10px 30px rgba(48, 162, 128, 0.22),
+      0 22px 56px rgba(42, 39, 36, 0.14);
+  }
+
   /* Atmospheric glass — for translucent overlays */
   .glass-bone {
     background: rgba(246, 241, 230, 0.78);
     backdrop-filter: blur(18px) saturate(110%);
     -webkit-backdrop-filter: blur(18px) saturate(110%);
   }
+
+  /* iOS / Android safe-area paddings — relied on in the root layout */
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+}
+
+/* ─── Premium gameplay micro-animations ─────────────────────────────────── */
+
+@keyframes shake-soft {
+  0%, 100% { transform: translateX(0); }
+  18% { transform: translateX(-7px); }
+  36% { transform: translateX(7px); }
+  54% { transform: translateX(-5px); }
+  72% { transform: translateX(4px); }
+  88% { transform: translateX(-2px); }
+}
+
+.animate-shake-soft {
+  animation: shake-soft 520ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes loader-pulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.55; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+
+@keyframes loader-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

@@ -43,7 +43,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr" className={`${inter.variable} ${display.variable} h-full`}>
-      <body className="relative flex min-h-screen w-full flex-col overflow-x-hidden antialiased">
+      <body className="relative flex min-h-dvh w-full flex-col overflow-x-hidden antialiased safe-top safe-bottom">
         <OrganicBackground />
         {children}
       </body>

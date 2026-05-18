@@ -134,18 +134,16 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
     }
   }, [finished, level, completeLevel, endTimer]);
 
-  function handleValidate() {
-    if (!pendingSelection) return;
-    if (pendingSelection.correct) {
-      markPairResolved(pendingSelection.a.pairId);
-      registerPairFound();
-    } else {
-      incrementErrors();
-      clearSelection();
-    }
+  function handleConfirm() {
+    if (!pendingSelection?.correct) return;
+    markPairResolved(pendingSelection.a.pairId);
+    registerPairFound();
   }
 
   function handleRetry() {
+    if (pendingSelection && !pendingSelection.correct) {
+      incrementErrors();
+    }
     clearSelection();
   }
 
@@ -200,7 +198,7 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.1, ease: easeOrganic }}
       >
-        Associez les éléments du vivant à leurs application humaines
+        Associez les éléments du vivant à leurs applications humaines
       </motion.h2>
 
       <Board
@@ -208,6 +206,11 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
         applications={applications}
         resolvedPairIds={resolvedPairs}
         selectedIds={selected.map((c) => c.id)}
+        errorIds={
+          pendingSelection && !pendingSelection.correct
+            ? [pendingSelection.a.id, pendingSelection.b.id]
+            : []
+        }
         onCardClick={selectCard}
       />
 
@@ -217,9 +220,8 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
         application={modalApplication}
         isCorrect={pendingSelection?.correct}
         explanation={pendingSelection?.correct ? pendingSelection.explanation : undefined}
-        onValidate={handleValidate}
+        onConfirm={handleConfirm}
         onRetry={handleRetry}
-        onCancel={handleRetry}
       />
 
       <AnimatePresence>

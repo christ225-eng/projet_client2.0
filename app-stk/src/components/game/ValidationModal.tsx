@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import type { Card } from "@/game-engine/types";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 
 interface ValidationModalProps {
   open: boolean;
@@ -12,24 +13,22 @@ interface ValidationModalProps {
   /** True if the selection forms a correct pair — shown as a soft green check. */
   isCorrect?: boolean;
   explanation?: string;
-  onValidate: () => void;
+  /** Called on the single CTA when the pair is correct (validates and advances). */
+  onConfirm: () => void;
+  /** Called on the single CTA when the pair is wrong (counts as error + clears selection). */
   onRetry: () => void;
-  onCancel: () => void;
 }
 
 const easeOrganic = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Contemplative validation modal. Replaces the aggressive reset of the
- * previous prototype. The two selected cards stay visible inside the
- * modal, the background dim is light, the wrong-pair ring is discreet.
+ * Contemplative validation modal.
  *
- *   Mode A — correct: emerald aura + ✓✓ + pedagogical explanation
- *   Mode B — wrong:   soft red ring + "Réessayer / Annuler"
+ *   Correct → emerald aura + ✓✓ + pedagogical explanation + "Continuer"
+ *   Wrong   → vivid red ring + shake + "Réessayer" (single, centered)
  *
- * Children stagger in (cards → check → explanation → CTA) so the eye
- * follows the comprehension flow rather than being hit by everything at
- * once.
+ * The two states are visually distinct so the player understands the outcome
+ * at a glance. Children stagger in (cards → check → explanation → CTA).
  */
 export function ValidationModal({
   open,
@@ -37,16 +36,15 @@ export function ValidationModal({
   application,
   isCorrect = false,
   explanation,
-  onValidate,
+  onConfirm,
   onRetry,
-  onCancel,
 }: ValidationModalProps) {
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
           key="modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -80,56 +78,123 @@ export function ValidationModal({
             />
           ) : null}
 
+          {/* Error bloom — subtle red wash behind the dialog when wrong */}
+          {!isCorrect ? (
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute"
+              style={{
+                width: "min(820px, 90vw)",
+                height: "min(620px, 80vh)",
+                background:
+                  "radial-gradient(ellipse, rgba(207,61,44,0.18) 0%, rgba(207,61,44,0.05) 45%, transparent 75%)",
+                filter: "blur(30px)",
+              }}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.6, ease: easeOrganic }}
+            />
+          ) : null}
+
           <motion.div
             role="dialog"
             aria-modal="true"
-            className={`relative w-full max-w-2xl rounded-2xl bg-surface-modal p-6 sm:p-8 md:rounded-3xl md:p-10 ${
-              isCorrect ? "shadow-[var(--shadow-modal)]" : "ring-error-soft"
-            }`}
+            className={cn(
+              "relative w-full max-w-2xl rounded-2xl bg-surface-modal p-5 sm:p-8 md:rounded-3xl md:p-10",
+              isCorrect ? "shadow-[var(--shadow-modal)]" : "ring-error-vivid",
+            )}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={
+              isCorrect
+                ? { opacity: 1, y: 0, scale: 1, x: 0 }
+                : {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    x: [0, -10, 10, -7, 6, -3, 0],
+                  }
+            }
             exit={{ opacity: 0, y: 14, scale: 0.98 }}
-            transition={{ duration: 0.55, ease: easeOrganic }}
+            transition={
+              isCorrect
+                ? { duration: 0.55, ease: easeOrganic }
+                : {
+                    duration: 0.6,
+                    ease: [0.36, 0.07, 0.19, 0.97],
+                    x: { duration: 0.55 },
+                  }
+            }
             style={{
               background:
                 "linear-gradient(180deg, rgba(179,169,142,1) 0%, rgba(159,148,121,1) 100%)",
             }}
           >
-            <motion.h2
-              className="text-center text-lg font-semibold tracking-tight text-bone sm:text-xl md:text-2xl"
+            <motion.div
+              className="flex items-center justify-center gap-2"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05, ease: easeOrganic }}
             >
-              {isCorrect ? "Association juste" : "Vérifiez votre association"}
-            </motion.h2>
+              {!isCorrect ? (
+                <span
+                  aria-hidden
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bone/95 text-[15px] font-bold text-[color:var(--color-error-strong)] shadow-[0_2px_6px_rgba(207,61,44,0.35)]"
+                >
+                  !
+                </span>
+              ) : null}
+              <h2 className="text-center text-base font-semibold tracking-tight text-bone sm:text-xl md:text-2xl">
+                {isCorrect ? "Association juste" : "Mauvaise association"}
+              </h2>
+            </motion.div>
 
             <motion.div
-              className="mt-6 flex items-center justify-center gap-3 sm:mt-8 sm:gap-6 md:gap-8"
+              className="mt-5 flex items-center justify-center gap-3 sm:mt-8 sm:gap-6 md:gap-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.15, ease: easeOrganic }}
             >
-              <CardThumb card={application} kind="Application" delay={0.15} highlight={isCorrect} />
+              <CardThumb
+                card={application}
+                kind="Application"
+                delay={0.15}
+                state={isCorrect ? "success" : "error"}
+              />
 
-              <motion.span
-                className={`text-2xl sm:text-3xl ${
-                  isCorrect ? "text-emerald drop-shadow-[0_0_12px_rgba(48,162,128,0.45)]" : "text-bone/50"
-                }`}
-                aria-hidden
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.35, ease: easeOrganic }}
-              >
-                ✓✓
-              </motion.span>
+              {isCorrect ? (
+                <motion.span
+                  className="text-2xl sm:text-3xl text-emerald drop-shadow-[0_0_12px_rgba(48,162,128,0.45)]"
+                  aria-hidden
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.35, ease: easeOrganic }}
+                >
+                  ✓✓
+                </motion.span>
+              ) : (
+                <motion.span
+                  aria-hidden
+                  className="grid h-9 w-9 place-items-center rounded-full bg-bone/95 text-lg font-bold text-[color:var(--color-error-strong)] shadow-[0_2px_8px_rgba(207,61,44,0.35)] sm:h-11 sm:w-11 sm:text-xl"
+                  initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.55, delay: 0.3, ease: easeOrganic }}
+                >
+                  ✕
+                </motion.span>
+              )}
 
-              <CardThumb card={vivant} kind="Vivant" delay={0.25} highlight={isCorrect} />
+              <CardThumb
+                card={vivant}
+                kind="Vivant"
+                delay={0.25}
+                state={isCorrect ? "success" : "error"}
+              />
             </motion.div>
 
             {/* Labels under each thumb */}
             <motion.div
-              className="mx-auto mt-4 flex max-w-xl items-start justify-center gap-3 px-1 text-center text-[10px] uppercase tracking-[0.18em] text-bone/85 sm:mt-5 sm:gap-12 sm:text-xs sm:tracking-[0.22em]"
+              className="mx-auto mt-3 flex max-w-xl items-start justify-center gap-3 px-1 text-center text-[10px] uppercase tracking-[0.18em] text-bone/85 sm:mt-5 sm:gap-12 sm:text-xs sm:tracking-[0.22em]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.45, ease: easeOrganic }}
@@ -144,7 +209,7 @@ export function ValidationModal({
             </motion.div>
 
             <AnimatePresence>
-              {explanation ? (
+              {isCorrect && explanation ? (
                 <motion.p
                   key="explanation"
                   className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-bone/95 sm:mt-6 sm:text-sm"
@@ -156,6 +221,20 @@ export function ValidationModal({
                   {explanation}
                 </motion.p>
               ) : null}
+
+              {!isCorrect ? (
+                <motion.p
+                  key="hint"
+                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-bone/90 sm:mt-6 sm:text-sm"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5, ease: easeOrganic }}
+                >
+                  Ces deux cartes ne forment pas une paire biomimétique. Observez à
+                  nouveau et tentez une autre association.
+                </motion.p>
+              ) : null}
             </AnimatePresence>
 
             <motion.div
@@ -164,30 +243,20 @@ export function ValidationModal({
               animate={{ opacity: 1, y: 0 }}
               transition={{
                 duration: 0.5,
-                delay: explanation ? 0.7 : 0.5,
+                delay: isCorrect ? 0.7 : 0.6,
                 ease: easeOrganic,
               }}
             >
-              <Button variant="secondary" size="lg" onClick={onValidate}>
-                {isCorrect ? "Continuer" : "Valider"}
-              </Button>
-            </motion.div>
-
-            {!isCorrect ? (
-              <motion.div
-                className="mt-6 flex flex-wrap justify-end gap-2 sm:mt-8 sm:gap-3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.6, ease: easeOrganic }}
-              >
-                <Button variant="outline" onClick={onRetry}>
+              {isCorrect ? (
+                <Button variant="secondary" size="lg" onClick={onConfirm}>
+                  Continuer
+                </Button>
+              ) : (
+                <Button variant="secondary" size="lg" onClick={onRetry}>
                   Réessayer
                 </Button>
-                <Button variant="ghost" onClick={onCancel}>
-                  Annuler
-                </Button>
-              </motion.div>
-            ) : null}
+              )}
+            </motion.div>
           </motion.div>
         </motion.div>
       ) : null}
@@ -199,23 +268,29 @@ function CardThumb({
   card,
   kind,
   delay = 0,
-  highlight = false,
+  state = "neutral",
 }: {
   card?: Card;
   kind: "Vivant" | "Application";
   delay?: number;
-  highlight?: boolean;
+  state?: "neutral" | "success" | "error";
 }) {
   return (
     <motion.div
-      className="relative h-20 w-[28vw] max-w-[9rem] overflow-hidden rounded-xl bg-surface-elevated outline outline-1 -outline-offset-1 outline-mineral/40 sm:h-32 sm:w-40 md:h-36 md:w-44"
+      className={cn(
+        "relative h-20 w-[28vw] max-w-[9rem] overflow-hidden rounded-xl bg-surface-elevated outline outline-1 -outline-offset-1 outline-mineral/40 sm:h-32 sm:w-40 md:h-36 md:w-44",
+        state === "error" && "outline-[color:var(--color-error-strong)]/0",
+      )}
       initial={{ opacity: 0, scale: 0.92, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.55, delay, ease: easeOrganic }}
       style={{
-        boxShadow: highlight
-          ? "0 1px 2px rgba(42,39,36,0.06), 0 8px 24px rgba(42,39,36,0.14), 0 0 0 1px rgba(48,162,128,0.22), 0 0 24px rgba(48,162,128,0.15)"
-          : "0 1px 2px rgba(42,39,36,0.06), 0 8px 24px rgba(42,39,36,0.10)",
+        boxShadow:
+          state === "success"
+            ? "0 1px 2px rgba(42,39,36,0.06), 0 8px 24px rgba(42,39,36,0.14), 0 0 0 1px rgba(48,162,128,0.22), 0 0 24px rgba(48,162,128,0.15)"
+            : state === "error"
+              ? "0 0 0 2px rgba(207,61,44,0.85), 0 0 18px rgba(207,61,44,0.30), 0 8px 24px rgba(42,39,36,0.14)"
+              : "0 1px 2px rgba(42,39,36,0.06), 0 8px 24px rgba(42,39,36,0.10)",
       }}
     >
       {card?.imageSrc ? (

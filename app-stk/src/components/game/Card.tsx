@@ -9,6 +9,8 @@ interface CardProps {
   card: CardType;
   selected?: boolean;
   resolved?: boolean;
+  /** When true, the card flashes red + shakes — used while the wrong-pair modal is open */
+  error?: boolean;
   disabled?: boolean;
   onClick?: () => void;
 }
@@ -17,17 +19,16 @@ interface CardProps {
  * Single play-card.
  *
  *   • aspect-[4/3] keeps source photos' landscape composition.
- *   • Permanent translucent caption pill at the bottom — never burned
- *     into the image. Labels wrap to two lines on mobile rather than
- *     truncating to "P…", so the player never loses the word.
- *   • Hover lifts the card and gently zooms the image (desktop only;
- *     hover affordances are pointer-aware so they don't fire on touch).
+ *   • Selected state: emerald aura + scale + glow — premium, immediately readable.
+ *   • Error state (driven by the validation modal): red ring + shake.
+ *   • Hover lifts the card and gently zooms the image (desktop only).
  *   • Resolved cards fade + desaturate so the eye moves to remaining pairs.
  */
 export function GameCard({
   card,
   selected,
   resolved,
+  error,
   disabled,
   onClick,
 }: CardProps) {
@@ -39,7 +40,13 @@ export function GameCard({
       onClick={onClick}
       disabled={disabled || resolved}
       whileHover={interactive ? { y: -4 } : undefined}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={interactive ? { scale: 0.97 } : undefined}
+      animate={
+        selected
+          ? { scale: 1.035, y: -2 }
+          : { scale: 1, y: 0 }
+      }
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       aria-label={card.label}
       aria-pressed={selected}
       className={cn(
@@ -49,8 +56,8 @@ export function GameCard({
         "outline outline-1 -outline-offset-1 outline-mineral/30",
         interactive &&
           "hover:shadow-[0_4px_10px_rgba(42,39,36,0.06),0_22px_56px_rgba(42,39,36,0.12)] hover:outline-clay/40",
-        selected &&
-          "outline-2 outline-sand/80 shadow-[0_4px_12px_rgba(174,162,135,0.28),0_22px_56px_rgba(42,39,36,0.14)]",
+        selected && !error && "ring-selected outline-emerald/0",
+        error && "ring-error-card animate-shake-soft outline-error/0",
         resolved && "opacity-30 grayscale pointer-events-none",
         disabled && "cursor-not-allowed",
       )}
@@ -66,6 +73,7 @@ export function GameCard({
             "object-cover object-center",
             "transition-transform duration-[1200ms] ease-[var(--ease-organic)]",
             interactive && "group-hover:scale-[1.035]",
+            selected && "scale-[1.05]",
           )}
         />
       ) : (
@@ -80,11 +88,12 @@ export function GameCard({
           className={cn(
             "inline-block max-w-full rounded-md sm:rounded-lg",
             "px-2 py-1 sm:px-3 sm:py-1.5",
-            "bg-bone/85 backdrop-blur-md",
+            "bg-bone/90 backdrop-blur-md",
             "text-[11px] leading-tight sm:text-[13px] md:text-sm font-medium tracking-tight text-graphite",
             "shadow-[0_1px_2px_rgba(42,39,36,0.06),0_4px_12px_rgba(42,39,36,0.08)]",
             "outline outline-1 -outline-offset-1 outline-mineral/25",
-            "line-clamp-2 text-center",
+            "line-clamp-2 text-center transition-colors duration-[var(--duration-quick)]",
+            selected && "bg-emerald/95 text-bone outline-emerald/40",
           )}
         >
           {card.label}

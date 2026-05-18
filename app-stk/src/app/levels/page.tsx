@@ -93,7 +93,7 @@ function LevelTile({ level, pairs, difficulty, unlocked, done }: LevelTileProps)
     "block w-full rounded-2xl border bg-bone/70 px-4 py-5 text-left backdrop-blur-sm sm:px-5 sm:py-6",
     "transition-all duration-[var(--duration-base)] ease-[var(--ease-organic)]",
     unlocked
-      ? "border-mineral/40 hover:border-clay/60 hover:bg-bone shadow-[var(--shadow-card)]"
+      ? "border-mineral/40 hover:border-clay/60 hover:bg-bone hover:-translate-y-0.5 shadow-[var(--shadow-card)] active:scale-[0.98]"
       : "border-mineral/20 opacity-50 cursor-not-allowed",
   );
 

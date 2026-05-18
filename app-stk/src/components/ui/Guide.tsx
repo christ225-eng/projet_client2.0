@@ -8,6 +8,9 @@ interface GuideProps {
   className?: string;
   /** Toggle the inner spiral imprint — set false when the guide is purely decorative */
   imprint?: boolean;
+  /** When provided, overrides the `size` prop and lets the parent control the
+   *  width / height via Tailwind classes (e.g. responsive breakpoints). */
+  sizeClassName?: string;
 }
 
 /**
@@ -24,13 +27,18 @@ interface GuideProps {
  *
  * All loops are slow (4-9s) so the orb feels alive without becoming busy.
  */
-export function Guide({ size = 56, className, imprint = true }: GuideProps) {
+export function Guide({
+  size = 56,
+  className,
+  imprint = true,
+  sizeClassName,
+}: GuideProps) {
   return (
     <motion.div
       role="img"
       aria-label="Guide biomimétique"
-      className={cn("relative shrink-0", className)}
-      style={{ width: size, height: size }}
+      className={cn("relative shrink-0", sizeClassName, className)}
+      style={sizeClassName ? undefined : { width: size, height: size }}
       animate={{ y: [-2, 2, -2] }}
       transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
     >

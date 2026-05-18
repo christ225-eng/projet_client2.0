@@ -25,18 +25,9 @@ export default async function PlayLevelPage({ params }: PageParams) {
 
   return (
     <>
-      <Header
-        centerSlot={
-          <span
-            aria-hidden
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-mineral/40 bg-bone/70 text-graphite/70 text-xs"
-          >
-            ⌕
-          </span>
-        }
-      />
+      <Header />
 
-      <main className="relative z-10 flex flex-1 flex-col px-4 pb-6 sm:px-6 sm:pb-8 md:px-8">
+      <main className="relative z-10 flex flex-1 flex-col px-3 pb-6 sm:px-6 sm:pb-8 md:px-8">
         <PlayClient level={config.level} pairsCount={config.pairsCount} pairs={pairs} />
       </main>
 

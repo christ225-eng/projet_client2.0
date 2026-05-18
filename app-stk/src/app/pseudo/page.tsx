@@ -27,17 +27,17 @@ export default function PseudoPage() {
     <>
       <Header />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-8">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 sm:px-8">
         <Reveal delay={0.05}>
-          <p className="mb-8 text-center text-xs tracking-[0.28em] uppercase text-clay">
-            Bienvenue dans l&apos;exploration
+          <p className="mb-7 text-center text-[10px] tracking-[0.32em] uppercase text-clay sm:mb-8 sm:text-xs">
+            Bienvenue
           </p>
         </Reveal>
 
         <Reveal delay={0.2}>
           <motion.form
             onSubmit={handleSubmit}
-            className="flex w-full max-w-xl items-center gap-4 rounded-full bg-bone/85 px-4 py-3 backdrop-blur-md"
+            className="flex w-full max-w-xl items-center gap-2.5 rounded-full bg-bone/85 px-2.5 py-2 backdrop-blur-md sm:gap-4 sm:px-4 sm:py-3"
             style={{
               boxShadow:
                 "0 1px 2px rgba(42,39,36,0.04), 0 16px 40px rgba(42,39,36,0.08)",
@@ -45,7 +45,7 @@ export default function PseudoPage() {
             animate={canSubmit ? { scale: 1.005 } : { scale: 1 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
-            <Guide size={56} />
+            <Guide sizeClassName="h-10 w-10 sm:h-14 sm:w-14" />
 
             <Input
               autoFocus
@@ -53,7 +53,7 @@ export default function PseudoPage() {
               onChange={(e) => setValue(e.target.value)}
               placeholder="Entrez votre pseudo"
               maxLength={24}
-              className="text-center"
+              className="min-w-0 h-11 px-2 text-[15px] sm:h-12 sm:px-4 sm:text-base"
               aria-label="Entrez votre pseudo"
             />
 
@@ -63,7 +63,7 @@ export default function PseudoPage() {
               whileHover={canSubmit ? { scale: 1.05 } : undefined}
               whileTap={canSubmit ? { scale: 0.95 } : undefined}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60 disabled:opacity-40 disabled:pointer-events-none"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60 disabled:opacity-40 disabled:pointer-events-none sm:h-12 sm:w-12"
               aria-label="Continuer"
             >
               <span aria-hidden className="text-graphite">→</span>
@@ -72,7 +72,7 @@ export default function PseudoPage() {
         </Reveal>
 
         <Reveal delay={0.5}>
-          <p className="mt-6 text-center text-xs text-ash/70">
+          <p className="mt-6 max-w-xs text-center text-[11px] leading-relaxed text-ash/70 sm:max-w-none sm:text-xs">
             Votre pseudo sera utilisé pour le classement final.
           </p>
         </Reveal>
