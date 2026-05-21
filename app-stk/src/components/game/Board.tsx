@@ -19,16 +19,21 @@ interface BoardProps {
 /**
  * Gallery-wall board.
  *
- * Two independent grids — Vivant on top, Application below — so the
- * conceptual separation between the two rows survives every viewport.
- *
  * Layout strategy:
- *   • mobile (< 640px): strict 2 cols ALWAYS, including 5-pair levels.
- *     For odd-count rows we DO NOT center a solo card — instead we let the
- *     5th card sit naturally at the start of a new row (still col-1) and
- *     pair it with a hidden phantom so the grid keeps perfect alignment.
- *   • tablet (≥ 640px): 3 cols on 5-pair levels, 2 cols on 4-pair.
- *   • desktop (≥ 768px): 4 cols (4-pair) or 5 cols (5-pair).
+ *   • Levels 1–3 (4 pairs) and tablet/desktop for ALL levels:
+ *     two stacked grids — vivants on top, applications below.
+ *
+ *   • Levels 4–5 (5 pairs) on MOBILE ONLY:
+ *     a single 2-column grid with vivants in col 1 and applications in col 2,
+ *     five rows tall. This guarantees:
+ *       - exactly 2 columns
+ *       - 5 cards left + 5 cards right
+ *       - perfect symmetry (no phantom slot, no centered solo card)
+ *       - same card sizes as the other levels
+ *
+ * On tablet/desktop the larger viewport keeps the conceptual top/bottom
+ * separation (vivants vs applications) so the gameplay reads the same as
+ * on 4-pair levels.
  */
 export function Board({
   vivants,
@@ -39,69 +44,80 @@ export function Board({
   hintIds = [],
   onCardClick,
 }: BoardProps) {
-  const cols = vivants.length; // 4 (levels 1-3) or 5 (levels 4-5)
+  const cols = vivants.length; // 4 (levels 1–3) or 5 (levels 4–5)
   const isFive = cols === 5;
 
-  // 2 cols on mobile (always) → 3 cols on tablet for 5-pair → 4/5 desktop
-  const colsClass = isFive
-    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
-    : "grid-cols-2 md:grid-cols-4";
+  const cardProps = (c: Card) => ({
+    card: c,
+    selected: selectedIds.includes(c.id),
+    resolved: resolvedPairIds.includes(c.pairId),
+    error: errorIds.includes(c.id),
+    hint: hintIds.includes(c.id),
+    onClick: () => onCardClick(c),
+  });
 
-  const renderCards = (cards: Card[]) => (
-    <>
-      {cards.map((c) => (
-        <div key={c.id} className="w-full">
-          <GameCard
-            card={c}
-            selected={selectedIds.includes(c.id)}
-            resolved={resolvedPairIds.includes(c.pairId)}
-            error={errorIds.includes(c.id)}
-            hint={hintIds.includes(c.id)}
-            onClick={() => onCardClick(c)}
-          />
-        </div>
-      ))}
-      {/* Phantom slot keeps mobile 2-col grid perfectly aligned when the row
-          count is odd (5-pair levels). Hidden from breakpoints that aren't
-          two-up. */}
-      {isFive ? (
-        <div
-          aria-hidden
-          className="invisible w-full sm:hidden"
-        >
-          {/* Match a real card's vertical footprint so the row heights align */}
-          <div className="aspect-[4/3] w-full" />
-        </div>
-      ) : null}
-    </>
-  );
+  const renderRow = (cards: Card[]) =>
+    cards.map((c) => (
+      <div key={c.id} className="w-full">
+        <GameCard {...cardProps(c)} />
+      </div>
+    ));
 
   return (
-    <div
-      className={cn(
-        "mx-auto w-full max-w-6xl",
-        isFive
-          ? "space-y-2.5 sm:space-y-5 md:space-y-7"
-          : "space-y-3 sm:space-y-5 md:space-y-7",
-      )}
-    >
+    <div className="mx-auto w-full max-w-6xl">
+      {/* MOBILE LAYOUT for 5-pair levels — single 5×2 grid */}
+      {isFive ? (
+        <div
+          className="grid gap-2.5 grid-cols-2 sm:hidden"
+          style={{ gridTemplateRows: "repeat(5, minmax(0, 1fr))" }}
+        >
+          {/* Interleave so col 1 = vivants[i], col 2 = applications[i] for each row */}
+          {vivants.map((v, i) => {
+            const a = applications[i];
+            return (
+              <div key={`row-${i}`} className="contents">
+                <div className="w-full">
+                  <GameCard {...cardProps(v)} />
+                </div>
+                {a ? (
+                  <div className="w-full">
+                    <GameCard {...cardProps(a)} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {/* TABLET + DESKTOP (and mobile for 4-pair levels) — two stacked grids */}
       <div
         className={cn(
-          "grid",
-          isFive ? "gap-2.5 sm:gap-5 md:gap-7" : "gap-3 sm:gap-5 md:gap-7",
-          colsClass,
+          isFive
+            ? "hidden sm:block sm:space-y-5 md:space-y-7"
+            : "space-y-3 sm:space-y-5 md:space-y-7",
         )}
       >
-        {renderCards(vivants)}
-      </div>
-      <div
-        className={cn(
-          "grid",
-          isFive ? "gap-2.5 sm:gap-5 md:gap-7" : "gap-3 sm:gap-5 md:gap-7",
-          colsClass,
-        )}
-      >
-        {renderCards(applications)}
+        <div
+          className={cn(
+            "grid",
+            isFive
+              ? "gap-5 md:gap-7 sm:grid-cols-3 md:grid-cols-5"
+              : "gap-3 sm:gap-5 md:gap-7 grid-cols-2 md:grid-cols-4",
+          )}
+        >
+          {renderRow(vivants)}
+        </div>
+        <div
+          className={cn(
+            "grid",
+            isFive
+              ? "gap-5 md:gap-7 sm:grid-cols-3 md:grid-cols-5"
+              : "gap-3 sm:gap-5 md:gap-7 grid-cols-2 md:grid-cols-4",
+          )}
+        >
+          {renderRow(applications)}
+        </div>
       </div>
     </div>
   );

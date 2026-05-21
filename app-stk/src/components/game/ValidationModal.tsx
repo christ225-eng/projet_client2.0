@@ -101,7 +101,7 @@ export function ValidationModal({
             role="dialog"
             aria-modal="true"
             className={cn(
-              "relative w-full max-w-2xl rounded-2xl bg-surface-modal p-5 sm:p-8 md:rounded-3xl md:p-10",
+              "relative w-full max-w-2xl rounded-2xl p-5 sm:p-8 md:rounded-3xl md:p-10",
               isCorrect ? "shadow-[var(--shadow-modal)]" : "ring-error-vivid",
             )}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -126,8 +126,9 @@ export function ValidationModal({
                   }
             }
             style={{
+              // Premium soft ivory — matches the requested #E7E0CE
               background:
-                "linear-gradient(180deg, rgba(179,169,142,1) 0%, rgba(159,148,121,1) 100%)",
+                "linear-gradient(180deg, #ECE6D7 0%, #E7E0CE 60%, #DDD4BC 100%)",
             }}
           >
             <motion.div
@@ -139,12 +140,19 @@ export function ValidationModal({
               {!isCorrect ? (
                 <span
                   aria-hidden
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-bone/95 text-[15px] font-bold text-[color:var(--color-error-strong)] shadow-[0_2px_6px_rgba(207,61,44,0.35)]"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--color-error-strong)] text-[15px] font-bold text-bone shadow-[0_2px_6px_rgba(207,61,44,0.35)]"
                 >
                   !
                 </span>
               ) : null}
-              <h2 className="text-center text-base font-semibold tracking-tight text-bone sm:text-xl md:text-2xl">
+              <h2
+                className={cn(
+                  "text-center text-base font-semibold tracking-tight sm:text-xl md:text-2xl",
+                  isCorrect
+                    ? "text-graphite"
+                    : "text-[color:var(--color-error-strong)]",
+                )}
+              >
                 {isCorrect ? "Association juste" : "Mauvaise association"}
               </h2>
             </motion.div>
@@ -175,7 +183,7 @@ export function ValidationModal({
               ) : (
                 <motion.span
                   aria-hidden
-                  className="grid h-9 w-9 place-items-center rounded-full bg-bone/95 text-lg font-bold text-[color:var(--color-error-strong)] shadow-[0_2px_8px_rgba(207,61,44,0.35)] sm:h-11 sm:w-11 sm:text-xl"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--color-error-strong)] text-lg font-bold text-bone shadow-[0_2px_8px_rgba(207,61,44,0.35)] sm:h-11 sm:w-11 sm:text-xl"
                   initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
                   transition={{ duration: 0.55, delay: 0.3, ease: easeOrganic }}
@@ -194,7 +202,7 @@ export function ValidationModal({
 
             {/* Labels under each thumb */}
             <motion.div
-              className="mx-auto mt-3 flex max-w-xl items-start justify-center gap-3 px-1 text-center text-[10px] uppercase tracking-[0.18em] text-bone/85 sm:mt-5 sm:gap-12 sm:text-xs sm:tracking-[0.22em]"
+              className="mx-auto mt-3 flex max-w-xl items-start justify-center gap-3 px-1 text-center text-[10px] uppercase tracking-[0.18em] text-clay sm:mt-5 sm:gap-12 sm:text-xs sm:tracking-[0.22em]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.45, ease: easeOrganic }}
@@ -212,7 +220,7 @@ export function ValidationModal({
               {isCorrect && explanation ? (
                 <motion.p
                   key="explanation"
-                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-bone/95 sm:mt-6 sm:text-sm"
+                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-graphite/85 sm:mt-6 sm:text-sm"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
@@ -225,7 +233,7 @@ export function ValidationModal({
               {!isCorrect ? (
                 <motion.p
                   key="hint"
-                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-bone/90 sm:mt-6 sm:text-sm"
+                  className="mx-auto mt-5 max-w-xl text-center text-xs leading-relaxed text-graphite/80 sm:mt-6 sm:text-sm"
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}

@@ -16,6 +16,7 @@ import {
   playCorrect,
   playWrong,
   playLevelComplete,
+  playClick,
   startAmbient,
   stopAmbient,
   unlockAudio,
@@ -282,7 +283,10 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
             : []
         }
         hintIds={hintIds}
-        onCardClick={selectCard}
+        onCardClick={(c) => {
+          playClick();
+          selectCard(c);
+        }}
       />
 
       <ValidationModal
@@ -344,30 +348,48 @@ function VictoryOverlay({ level, onNext }: { level: number; onNext: () => void }
       />
 
       <div className="relative z-10 flex flex-col items-center">
+        <motion.span
+          aria-hidden
+          className="grid h-12 w-12 place-items-center rounded-full bg-emerald/15 text-emerald sm:h-14 sm:w-14"
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.55, delay: 0.2, ease: easeOrganic }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-6 w-6 sm:h-7 sm:w-7"
+          >
+            <path d="M5 12 l4 4 L19 7" />
+          </svg>
+        </motion.span>
+
         <motion.p
-          className="text-xs tracking-[0.32em] uppercase text-clay"
+          className="mt-5 text-[11px] tracking-[0.32em] uppercase text-clay sm:text-xs"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25, ease: easeOrganic }}
+          transition={{ duration: 0.5, delay: 0.35, ease: easeOrganic }}
         >
           {isFinal ? "Exploration complète" : `Niveau ${level} terminé`}
         </motion.p>
 
-        <motion.span
-          className="mt-3 text-6xl font-bold tracking-tight text-graphite md:text-7xl lg:text-8xl"
-          style={{
-            filter: "drop-shadow(0 6px 28px rgba(42,39,36,0.18))",
-            letterSpacing: "-0.04em",
-          }}
-          initial={{ opacity: 0, scale: 0.92, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.35, ease: easeOrganic }}
+        <motion.h2
+          className="mt-4 text-2xl font-semibold tracking-tight text-graphite sm:text-3xl md:text-4xl"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5, ease: easeOrganic }}
         >
-          GAGNÉ&nbsp;!
-        </motion.span>
+          {isFinal
+            ? "Vous avez exploré le vivant"
+            : `Bravo, niveau ${level} validé`}
+        </motion.h2>
 
         <motion.p
-          className="mt-5 max-w-md text-center text-sm text-graphite/90 leading-relaxed"
+          className="mt-4 max-w-md text-center text-sm text-ash leading-relaxed"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.65, ease: easeOrganic }}

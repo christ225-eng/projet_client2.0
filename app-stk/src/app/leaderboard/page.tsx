@@ -14,6 +14,7 @@ import {
   subscribeToScores,
   type LeaderboardEntry,
 } from "@/lib/leaderboard";
+import { playLeaderboardOpen, unlockAudio } from "@/lib/audio";
 import { formatDuration } from "@/game-engine/score";
 import { usePlayerStore } from "@/stores/playerStore";
 import { cn } from "@/lib/cn";
@@ -67,6 +68,14 @@ export default function LeaderboardPage() {
       cancelled = true;
     };
   }, [pseudo, entries.length]);
+
+  // Leaderboard opening cue — one-shot at mount; tries to play right away,
+  // but most browsers will need a prior gesture (the click that navigated
+  // here from /play/5) which already unlocked the audio context.
+  useEffect(() => {
+    unlockAudio();
+    playLeaderboardOpen();
+  }, []);
 
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
