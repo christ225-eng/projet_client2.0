@@ -14,13 +14,14 @@ export function Header({ rightSlot, centerSlot, className }: HeaderProps) {
     <header
       className={cn(
         "relative z-10 flex items-center justify-between gap-2",
-        "px-4 py-4 sm:px-8 sm:py-6 md:px-12 md:py-8",
+        "px-4 py-3 sm:px-8 sm:py-4 md:px-12 md:py-5",
         className,
       )}
     >
       <Link
         href="/"
-        className="font-semibold tracking-[0.18em] text-graphite text-sm md:text-base hover:text-clay transition-colors"
+        className="font-display tracking-[0.06em] text-graphite text-xl md:text-2xl hover:text-clay transition-colors"
+        aria-label="STK Architecture — accueil"
       >
         STK
       </Link>

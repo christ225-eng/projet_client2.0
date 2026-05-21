@@ -1,20 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Permanent_Marker } from "next/font/google";
+import { Geist, Playfair_Display } from "next/font/google";
 import { OrganicBackground } from "@/components/layout/OrganicBackground";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-/** Display font for the celebratory "GAGNÉ!!" headline (and similar accents). */
-const display = Permanent_Marker({
-  variable: "--font-display",
+/** Reserved for the STK logo / wordmark — never used as a body font. */
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["500", "600", "700"],
   display: "swap",
 });
 
@@ -33,8 +33,6 @@ export const viewport: Viewport = {
   themeColor: "#f6f1e6",
   width: "device-width",
   initialScale: 1,
-  // Keeps the layout stable when the iOS Safari URL bar slides; pairs with
-  // min-h-screen below so the organic background never gets cropped.
   viewportFit: "cover",
 };
 
@@ -42,8 +40,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" className={`${inter.variable} ${display.variable} h-full`}>
-      <body className="relative flex min-h-dvh w-full flex-col overflow-x-hidden antialiased safe-top safe-bottom">
+    <html lang="fr" className={`${geist.variable} ${playfair.variable} h-full`}>
+      <body className="relative flex h-dvh w-full flex-col overflow-x-hidden overflow-y-auto antialiased safe-top safe-bottom">
         <OrganicBackground />
         {children}
       </body>

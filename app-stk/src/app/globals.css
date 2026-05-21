@@ -33,9 +33,11 @@
   --color-surface-elevated: #f9f5ec;
   --color-surface-modal: #b3a98e;
 
-  /* Typography stacks */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display), cursive;
+  /* Typography stacks — ONLY two fonts allowed in the project. */
+  /* Geist for everything (body, UI, headings) */
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  /* Playfair Display reserved for the STK logo / wordmark */
+  --font-display: var(--font-playfair), Georgia, serif;
 
   /* Motion — slow, organic, contemplative */
   --ease-organic: cubic-bezier(0.22, 1, 0.36, 1);
@@ -110,6 +112,36 @@
       0 0 0 7px rgba(48, 162, 128, 0.18),
       0 10px 30px rgba(48, 162, 128, 0.22),
       0 22px 56px rgba(42, 39, 36, 0.14);
+  }
+
+  /* Hint pulse — subtle dashed aura suggesting a pair to try */
+  .ring-hint {
+    box-shadow: 0 0 0 2px rgba(48, 162, 128, 0.55),
+      0 0 0 6px rgba(48, 162, 128, 0.12),
+      0 14px 40px rgba(42, 39, 36, 0.12);
+    animation: hint-breath 2.6s ease-in-out infinite;
+  }
+
+  @keyframes hint-breath {
+    0%, 100% {
+      box-shadow: 0 0 0 2px rgba(48, 162, 128, 0.45),
+        0 0 0 6px rgba(48, 162, 128, 0.08),
+        0 14px 40px rgba(42, 39, 36, 0.12);
+    }
+    50% {
+      box-shadow: 0 0 0 3px rgba(48, 162, 128, 0.78),
+        0 0 0 10px rgba(48, 162, 128, 0.16),
+        0 20px 56px rgba(42, 39, 36, 0.14);
+    }
+  }
+
+  /* Premium typography classes — reserved usages */
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01" on, "ss02" on;
+  }
+  .font-sans {
+    font-family: var(--font-sans);
   }
 
   /* Atmospheric glass — for translucent overlays */

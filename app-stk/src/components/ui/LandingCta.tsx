@@ -38,7 +38,7 @@ export function LandingCta({ href, children, delayMs = 1400 }: LandingCtaProps) 
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className="mt-12 inline-flex h-12 items-center rounded-full bg-surface-elevated border border-mineral/60 px-8 text-sm font-medium text-graphite shadow-[var(--shadow-soft)] transition-all duration-[var(--duration-quick)] hover:bg-bone hover:border-clay/60 active:scale-[0.985] disabled:opacity-70 disabled:pointer-events-none"
+        className="mt-12 inline-flex h-12 items-center rounded-full bg-graphite border border-graphite px-8 text-sm font-medium text-bone shadow-[0_2px_6px_rgba(0,0,0,0.18),0_14px_36px_rgba(0,0,0,0.22)] transition-[background-color,box-shadow,transform] duration-[var(--duration-quick)] ease-[var(--ease-organic)] hover:bg-black hover:shadow-[0_4px_12px_rgba(0,0,0,0.26),0_22px_52px_rgba(0,0,0,0.32)] active:scale-[0.985] disabled:opacity-70 disabled:pointer-events-none"
       >
         {children}
       </button>

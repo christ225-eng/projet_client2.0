@@ -11,16 +11,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
 }
 
+/**
+ * Premium minimal black buttons. The default `primary` and the in-modal
+ * `secondary` both render as a deep graphite/black pill with elegant
+ * hover (subtle lift + ring) — keeps the whole experience cohesive.
+ *
+ * `ghost` and `outline` stay light for non-primary affordances (e.g.
+ * dismissals, secondary inline actions).
+ */
 const variantClasses: Record<Variant, string> = {
-  // Maquette: white pill with subtle border + soft shadow — premium, not flashy
   primary:
-    "bg-surface-elevated text-graphite border border-mineral/60 shadow-[var(--shadow-soft)] hover:bg-bone hover:border-clay/60",
-  // Brand sand (#AEA287) — used for the main modal CTA "Valider"
+    "bg-graphite text-bone border border-graphite shadow-[0_2px_6px_rgba(0,0,0,0.18),0_12px_28px_rgba(0,0,0,0.18)] hover:bg-black hover:shadow-[0_4px_10px_rgba(0,0,0,0.22),0_18px_42px_rgba(0,0,0,0.25)]",
   secondary:
-    "bg-sand text-bone border border-sand hover:bg-clay hover:border-clay",
-  ghost: "text-graphite hover:bg-fog/60",
+    "bg-graphite text-bone border border-graphite shadow-[0_2px_6px_rgba(0,0,0,0.22),0_12px_28px_rgba(0,0,0,0.22)] hover:bg-black hover:shadow-[0_4px_10px_rgba(0,0,0,0.28),0_18px_42px_rgba(0,0,0,0.3)]",
+  ghost:
+    "text-graphite hover:bg-graphite/10",
   outline:
-    "bg-transparent text-graphite border border-mineral/70 hover:border-clay hover:bg-bone/40",
+    "bg-transparent text-graphite border border-graphite/80 hover:bg-graphite hover:text-bone",
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -40,9 +47,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-tight",
-          "transition-[background,border-color,color,transform] duration-[var(--duration-quick)] ease-[var(--ease-organic)]",
+          "transition-[background-color,box-shadow,transform,border-color] duration-[var(--duration-quick)] ease-[var(--ease-organic)]",
           "active:scale-[0.985] disabled:opacity-50 disabled:pointer-events-none",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay/60 focus-visible:ring-offset-2 focus-visible:ring-offset-bone",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-graphite/40 focus-visible:ring-offset-2 focus-visible:ring-offset-bone",
           variantClasses[variant],
           sizeClasses[size],
           className,

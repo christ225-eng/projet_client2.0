@@ -11,24 +11,21 @@ interface CardProps {
   resolved?: boolean;
   /** When true, the card flashes red + shakes — used while the wrong-pair modal is open */
   error?: boolean;
+  /** When true, the card gets a soft pulsing emerald ring — suggests this pair */
+  hint?: boolean;
   disabled?: boolean;
   onClick?: () => void;
 }
 
 /**
  * Single play-card.
- *
- *   • aspect-[4/3] keeps source photos' landscape composition.
- *   • Selected state: emerald aura + scale + glow — premium, immediately readable.
- *   • Error state (driven by the validation modal): red ring + shake.
- *   • Hover lifts the card and gently zooms the image (desktop only).
- *   • Resolved cards fade + desaturate so the eye moves to remaining pairs.
  */
 export function GameCard({
   card,
   selected,
   resolved,
   error,
+  hint,
   disabled,
   onClick,
 }: CardProps) {
@@ -44,9 +41,15 @@ export function GameCard({
       animate={
         selected
           ? { scale: 1.035, y: -2 }
-          : { scale: 1, y: 0 }
+          : hint && !error
+            ? { scale: [1, 1.015, 1] }
+            : { scale: 1, y: 0 }
       }
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      transition={
+        hint && !selected && !error
+          ? { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0.55, ease: [0.22, 1, 0.36, 1] }
+      }
       aria-label={card.label}
       aria-pressed={selected}
       className={cn(
@@ -58,6 +61,7 @@ export function GameCard({
           "hover:shadow-[0_4px_10px_rgba(42,39,36,0.06),0_22px_56px_rgba(42,39,36,0.12)] hover:outline-clay/40",
         selected && !error && "ring-selected outline-emerald/0",
         error && "ring-error-card animate-shake-soft outline-error/0",
+        hint && !selected && !error && "ring-hint outline-emerald/0",
         resolved && "opacity-30 grayscale pointer-events-none",
         disabled && "cursor-not-allowed",
       )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,8 +12,17 @@ import { useGameStore } from "@/stores/gameStore";
 import { useScoreStore, getElapsedSeconds } from "@/stores/scoreStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { saveScore } from "@/lib/leaderboard";
+import {
+  playCorrect,
+  playWrong,
+  playLevelComplete,
+  startAmbient,
+  stopAmbient,
+  unlockAudio,
+} from "@/lib/audio";
 import { ValidationModal } from "@/components/game/ValidationModal";
 import { Button } from "@/components/ui/Button";
+import { AudioToggle } from "@/components/ui/AudioToggle";
 
 /**
  * Board is rendered client-only. The shuffle in PlayClient uses
@@ -54,16 +63,10 @@ interface PlayClientProps {
 
 const easeOrganic = [0.22, 1, 0.36, 1] as const;
 
-/**
- * Gameplay orchestrator — wires the game engine to the visual board and
- * to the global score store. pendingSelection is derived purely from
- * `selected`, so the modal opens / closes implicitly with no setState in
- * effect.
- *
- * On the last pair of level 5: timer stops, final score is computed and
- * persisted to localStorage so the leaderboard can render real data
- * without a backend.
- */
+// Hint triggers — generous so the help feels invited, not pushed
+const HINT_INACTIVITY_MS = 14_000;
+const HINT_ERROR_THRESHOLD = 3;
+
 export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
   const router = useRouter();
   const {
@@ -105,16 +108,37 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
 
   const finished = resolvedPairs.length === pairsCount;
 
-  // End-of-level / end-of-game side-effects. On the final level we also
-  // persist the score so the leaderboard reflects real, played games.
+  // ── Audio side-effects ────────────────────────────────────────────────────
+  useEffect(() => {
+    unlockAudio();
+    startAmbient();
+    return () => stopAmbient();
+  }, []);
+
+  // Modal results — play correct/wrong on transition (open → outcome known)
+  const lastFxKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingSelection) {
+      lastFxKeyRef.current = null;
+      return;
+    }
+    const key = `${pendingSelection.a.id}|${pendingSelection.b.id}|${pendingSelection.correct ? "ok" : "ko"}`;
+    if (lastFxKeyRef.current === key) return;
+    lastFxKeyRef.current = key;
+    if (pendingSelection.correct) playCorrect();
+    else playWrong();
+  }, [pendingSelection]);
+
+  // End-of-level / end-of-game side-effects.
   useEffect(() => {
     if (!finished) return;
     completeLevel(level);
+    playLevelComplete();
+
     if (level !== 5) return;
-
     endTimer();
+    stopAmbient();
 
-    // Read the just-updated store snapshots; Zustand updates are synchronous.
     const score = useScoreStore.getState();
     const pseudo = usePlayerStore.getState().pseudo;
     const seconds = getElapsedSeconds(score);
@@ -134,8 +158,39 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
     }
   }, [finished, level, completeLevel, endTimer]);
 
+  // ── Hint system ──────────────────────────────────────────────────────────
+  // Suggests a yet-unsolved pair after a stretch of inactivity OR a streak
+  // of wrong attempts. Hint clears as soon as the player interacts again.
+  const [hintPairId, setHintPairId] = useState<number | null>(null);
+  const errorStreakRef = useRef(0);
+  const lastInteractionRef = useRef<number>(Date.now());
+  const modalOpen = pendingSelection !== null;
+
+  function pickRandomUnresolvedPair(): number | null {
+    const remaining = pairs.filter((p) => !resolvedPairs.includes(p.id));
+    if (remaining.length === 0) return null;
+    return remaining[Math.floor(Math.random() * remaining.length)]!.id;
+  }
+
+  // Schedule an inactivity hint
+  useEffect(() => {
+    if (finished || modalOpen) return;
+    lastInteractionRef.current = Date.now();
+    const timer = window.setTimeout(() => {
+      setHintPairId((current) => current ?? pickRandomUnresolvedPair());
+    }, HINT_INACTIVITY_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected.length, resolvedPairs.length, finished, modalOpen]);
+
+  // Clear the hint when the player engages
+  useEffect(() => {
+    if (selected.length > 0) setHintPairId(null);
+  }, [selected.length]);
+
   function handleConfirm() {
     if (!pendingSelection?.correct) return;
+    errorStreakRef.current = 0;
     markPairResolved(pendingSelection.a.pairId);
     registerPairFound();
   }
@@ -143,6 +198,11 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
   function handleRetry() {
     if (pendingSelection && !pendingSelection.correct) {
       incrementErrors();
+      errorStreakRef.current += 1;
+      if (errorStreakRef.current >= HINT_ERROR_THRESHOLD) {
+        setHintPairId(pickRandomUnresolvedPair());
+        errorStreakRef.current = 0;
+      }
     }
     clearSelection();
   }
@@ -166,6 +226,13 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
       : pendingSelection.b
     : undefined;
 
+  const hintIds = useMemo<string[]>(() => {
+    if (hintPairId === null) return [];
+    const v = vivants.find((c) => c.pairId === hintPairId)?.id;
+    const a = applications.find((c) => c.pairId === hintPairId)?.id;
+    return [v, a].filter((x): x is string => Boolean(x));
+  }, [hintPairId, vivants, applications]);
+
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:mb-6">
@@ -178,22 +245,25 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
           Niveau {level}
         </motion.span>
 
-        {/* Per spec: this is a PAIR counter, NOT a numeric score */}
-        <motion.span
-          className="inline-flex items-center rounded-full bg-bone/75 px-3 py-1 text-xs text-ash backdrop-blur-sm border border-mineral/40 sm:px-4 sm:py-1.5 sm:text-sm"
-          initial={{ opacity: 0, x: 8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: easeOrganic }}
-        >
-          Paires&nbsp;:
-          <span className="ml-1 font-semibold text-graphite tabular-nums">
-            {resolvedPairs.length}/{pairsCount}
-          </span>
-        </motion.span>
+        <div className="flex items-center gap-2">
+          <AudioToggle />
+          {/* Per spec: this is a PAIR counter, NOT a numeric score */}
+          <motion.span
+            className="inline-flex items-center rounded-full bg-bone/75 px-3 py-1 text-xs text-ash backdrop-blur-sm border border-mineral/40 sm:px-4 sm:py-1.5 sm:text-sm"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: easeOrganic }}
+          >
+            Paires&nbsp;:
+            <span className="ml-1 font-semibold text-graphite tabular-nums">
+              {resolvedPairs.length}/{pairsCount}
+            </span>
+          </motion.span>
+        </div>
       </div>
 
       <motion.h2
-        className="mb-5 text-center text-sm font-medium leading-snug text-graphite sm:mb-7 sm:text-base md:mb-8 md:text-lg"
+        className="mb-4 text-center text-sm font-medium leading-snug text-graphite sm:mb-6 sm:text-base md:mb-7 md:text-lg"
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, delay: 0.1, ease: easeOrganic }}
@@ -211,6 +281,7 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
             ? [pendingSelection.a.id, pendingSelection.b.id]
             : []
         }
+        hintIds={hintIds}
         onCardClick={selectCard}
       />
 
@@ -283,16 +354,16 @@ function VictoryOverlay({ level, onNext }: { level: number; onNext: () => void }
         </motion.p>
 
         <motion.span
-          className="mt-3 font-display text-7xl md:text-8xl text-graphite"
+          className="mt-3 text-6xl font-bold tracking-tight text-graphite md:text-7xl lg:text-8xl"
           style={{
-            transform: "rotate(-3deg)",
             filter: "drop-shadow(0 6px 28px rgba(42,39,36,0.18))",
+            letterSpacing: "-0.04em",
           }}
-          initial={{ opacity: 0, scale: 0.92, rotate: -8 }}
-          animate={{ opacity: 1, scale: 1, rotate: -3 }}
+          initial={{ opacity: 0, scale: 0.92, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.35, ease: easeOrganic }}
         >
-          GAGNÉ&nbsp;!!
+          GAGNÉ&nbsp;!
         </motion.span>
 
         <motion.p

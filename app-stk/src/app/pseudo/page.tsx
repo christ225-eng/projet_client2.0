@@ -63,10 +63,10 @@ export default function PseudoPage() {
               whileHover={canSubmit ? { scale: 1.05 } : undefined}
               whileTap={canSubmit ? { scale: 0.95 } : undefined}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60 disabled:opacity-40 disabled:pointer-events-none sm:h-12 sm:w-12"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-graphite text-bone shadow-[0_2px_6px_rgba(0,0,0,0.22),0_10px_22px_rgba(0,0,0,0.24)] transition-colors hover:bg-black disabled:opacity-40 disabled:pointer-events-none sm:h-12 sm:w-12"
               aria-label="Continuer"
             >
-              <span aria-hidden className="text-graphite">→</span>
+              <span aria-hidden>→</span>
             </motion.button>
           </motion.form>
         </Reveal>

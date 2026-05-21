@@ -103,12 +103,10 @@ export default function IntroPage() {
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.94 }}
                 transition={{ duration: 0.25, ease: easeOrganic }}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-elevated border border-mineral/60 transition-colors hover:bg-bone hover:border-clay/60 sm:h-11 sm:w-11"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-graphite text-bone shadow-[0_2px_6px_rgba(0,0,0,0.2),0_10px_22px_rgba(0,0,0,0.22)] transition-colors hover:bg-black sm:h-11 sm:w-11"
                 aria-label={isLast ? "Commencer le jeu" : "Étape suivante"}
               >
-                <span aria-hidden className="text-graphite">
-                  {isLast ? "✓" : "→"}
-                </span>
+                <span aria-hidden>{isLast ? "✓" : "→"}</span>
               </motion.button>
             </motion.div>
           </AnimatePresence>
