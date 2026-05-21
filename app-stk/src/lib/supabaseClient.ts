@@ -16,12 +16,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  *
  *   create table if not exists public.leaderboard (
  *     id uuid primary key default gen_random_uuid(),
- *     prenom text not null,
+ *     pseudo text not null,
  *     score integer not null,
  *     temps integer not null,
  *     erreurs integer not null,
  *     created_at timestamptz not null default now(),
- *     check (char_length(prenom) between 1 and 24),
+ *     check (char_length(pseudo) between 1 and 24),
  *     check (score >= 0 and score <= 11000),
  *     check (temps >= 30 and temps <= 14400),
  *     check (erreurs >= 0 and erreurs <= 1000)
@@ -31,20 +31,19 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  *
  *   alter table public.leaderboard enable row level security;
  *
- *   -- Public can read the leaderboard
  *   drop policy if exists "leaderboard read public" on public.leaderboard;
  *   create policy "leaderboard read public"
- *     on public.leaderboard for select
- *     using (true);
+ *     on public.leaderboard for select using (true);
  *
- *   -- Public can insert new scores (validated by table CHECK constraints)
  *   drop policy if exists "leaderboard insert public" on public.leaderboard;
  *   create policy "leaderboard insert public"
- *     on public.leaderboard for insert
- *     with check (true);
+ *     on public.leaderboard for insert with check (true);
  *
- *   -- Realtime broadcasting on inserts (Database → Publications)
  *   alter publication supabase_realtime add table public.leaderboard;
+ *
+ * If you previously ran the SQL with a `prenom` column, rename it:
+ *
+ *   alter table public.leaderboard rename column prenom to pseudo;
  */
 
 let cached: SupabaseClient | null | undefined = undefined;
@@ -58,6 +57,11 @@ export function getBrowserSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[stk-leaderboard] Supabase env vars missing — leaderboard will stay empty.",
+      { hasUrl: Boolean(url), hasKey: Boolean(key) },
+    );
     cached = null;
     return null;
   }

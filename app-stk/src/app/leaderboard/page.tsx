@@ -44,7 +44,7 @@ export default function LeaderboardPage() {
   // Player highlight: the BEST (highest-scoring) entry matching the
   // current pseudo within the visible top 100.
   const myIndexInList = pseudo
-    ? entries.findIndex((e) => e.prenom === pseudo)
+    ? entries.findIndex((e) => e.pseudo === pseudo)
     : -1;
 
   // Exact global rank — resolved via a dedicated query so it works past
@@ -310,7 +310,7 @@ function PodiumCard({
           emphasized ? "text-bone/80" : "text-clay",
         )}
       >
-        {isMe ? "Vous" : entry.prenom}
+        {isMe ? "Vous" : entry.pseudo}
       </p>
 
       <p
@@ -388,7 +388,7 @@ function RankList({
         const isMe = absoluteIndex === myIndex;
         return (
           <RankRow
-            key={`${entry.prenom}-${entry.score}-${entry.temps}-${i}`}
+            key={`${entry.pseudo}-${entry.score}-${entry.temps}-${i}`}
             rank={startRank + i}
             entry={entry}
             isMe={isMe}
@@ -429,7 +429,7 @@ function RankRow({
       }}
     >
       <RankBadge rank={rank} isMe={isMe} />
-      <Avatar name={entry.prenom} isMe={isMe} />
+      <Avatar name={entry.pseudo} isMe={isMe} />
 
       <span
         className={cn(
@@ -437,7 +437,7 @@ function RankRow({
           isMe ? "font-semibold text-graphite" : "text-graphite/90",
         )}
       >
-        {isMe ? "Vous" : entry.prenom}
+        {isMe ? "Vous" : entry.pseudo}
       </span>
 
       <div className="flex flex-col items-end shrink-0">

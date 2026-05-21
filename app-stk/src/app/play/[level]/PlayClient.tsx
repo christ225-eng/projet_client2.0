@@ -12,15 +12,7 @@ import { useGameStore } from "@/stores/gameStore";
 import { useScoreStore, getElapsedSeconds } from "@/stores/scoreStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { saveScore } from "@/lib/leaderboard";
-import {
-  playCorrect,
-  playWrong,
-  playLevelComplete,
-  playClick,
-  startAmbient,
-  stopAmbient,
-  unlockAudio,
-} from "@/lib/audio";
+import { playCorrect, playWrong, unlockAudio } from "@/lib/audio";
 import { ValidationModal } from "@/components/game/ValidationModal";
 import { Button } from "@/components/ui/Button";
 import { AudioToggle } from "@/components/ui/AudioToggle";
@@ -70,6 +62,7 @@ const HINT_ERROR_THRESHOLD = 3;
 
 export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
   const router = useRouter();
+  const storeLevel = useGameStore((s) => s.currentLevel);
   const {
     setLevel,
     selected,
@@ -107,16 +100,25 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
     };
   }, [selected, pairs]);
 
-  const finished = resolvedPairs.length === pairsCount;
+  // CRITICAL — must compare the URL level to the store level. On a level
+  // change the store still holds the previous level's resolvedPairs for one
+  // render, and naively computing `finished` from those would fire the
+  // level-complete side-effects (sound + save score) the instant a new
+  // level page mounts. We only treat the run as complete when the store
+  // has synced.
+  const finished =
+    storeLevel === level && resolvedPairs.length === pairsCount;
 
   // ── Audio side-effects ────────────────────────────────────────────────────
+  // No ambient loop, no UI click — strictly event-driven. unlockAudio just
+  // warms up the sample pool so the first correct/wrong cue isn't silent.
   useEffect(() => {
     unlockAudio();
-    startAmbient();
-    return () => stopAmbient();
   }, []);
 
-  // Modal results — play correct/wrong on transition (open → outcome known)
+  // Modal results — play correct/wrong on transition (open → outcome known).
+  // The correct sample is ALSO the level-complete cue (per spec), so we do
+  // NOT play it again from the finished-effect to avoid doubling.
   const lastFxKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!pendingSelection) {
@@ -130,15 +132,13 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
     else playWrong();
   }, [pendingSelection]);
 
-  // End-of-level / end-of-game side-effects.
+  // End-of-level / end-of-game side-effects. SILENT — no audio fires here.
   useEffect(() => {
     if (!finished) return;
     completeLevel(level);
-    playLevelComplete();
 
     if (level !== 5) return;
     endTimer();
-    stopAmbient();
 
     const score = useScoreStore.getState();
     const pseudo = usePlayerStore.getState().pseudo;
@@ -150,7 +150,7 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
 
     if (pseudo) {
       saveScore({
-        prenom: pseudo,
+        pseudo,
         score: finalScore,
         temps: seconds,
         erreurs: score.errors,
@@ -283,10 +283,7 @@ export function PlayClient({ level, pairsCount, pairs }: PlayClientProps) {
             : []
         }
         hintIds={hintIds}
-        onCardClick={(c) => {
-          playClick();
-          selectCard(c);
-        }}
+        onCardClick={selectCard}
       />
 
       <ValidationModal

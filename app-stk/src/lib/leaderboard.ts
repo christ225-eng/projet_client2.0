@@ -1,23 +1,23 @@
 /**
  * Global leaderboard client — Supabase-backed.
  *
- * Reads and writes go straight to the `public.leaderboard` Supabase table
- * via the browser client (anon key). Real-time updates ride the
- * `postgres_changes` channel so every player sees new entries appear live.
+ * Schema (column names must match exactly the SQL run in Supabase):
+ *   - pseudo       text
+ *   - score        integer
+ *   - temps        integer
+ *   - erreurs      integer
+ *   - created_at   timestamptz
  *
- * No localStorage as the primary source any more — we only use it as a
- * short-lived hydration hint so the first paint after a refresh shows
- * something familiar while the network round-trip lands. The authoritative
- * snapshot is always the server.
- *
- * If the env vars are absent (e.g. local dev without Supabase), reads
- * return an empty list and writes are no-ops — the UI still mounts.
+ * Diagnostic logs are prefixed with `[stk-leaderboard]` so the user can
+ * tail the browser devtools and confirm the round-trips are landing as
+ * expected. Logs only describe what the page itself can already see —
+ * the anon key is never printed.
  */
 
 import { getBrowserSupabase, LEADERBOARD_TABLE } from "./supabaseClient";
 
 export interface LeaderboardEntry {
-  prenom: string;
+  pseudo: string;
   score: number;
   /** Total elapsed seconds across the 5 levels */
   temps: number;
@@ -28,14 +28,14 @@ export interface LeaderboardEntry {
 }
 
 interface DbRow {
-  prenom: string;
+  pseudo: string;
   score: number;
   temps: number;
   erreurs: number;
   created_at: string;
 }
 
-const HYDRATION_CACHE_KEY = "stk-leaderboard-cache-v2";
+const HYDRATION_CACHE_KEY = "stk-leaderboard-cache-v3";
 const CHANGE_EVENT = "stk-leaderboard-changed";
 const MAX_PSEUDO_LEN = 24;
 const MAX_SCORE = 22 * 500; // 11_000
@@ -50,11 +50,11 @@ let snapshotCache: LeaderboardEntry[] = EMPTY;
 let snapshotKey = "";
 let didHydrate = false;
 
-// ── Snapshot helpers ───────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function rowToEntry(row: DbRow): LeaderboardEntry {
   return {
-    prenom: row.prenom,
+    pseudo: row.pseudo,
     score: row.score,
     temps: row.temps,
     erreurs: row.erreurs,
@@ -73,7 +73,7 @@ export function sortScores(entries: LeaderboardEntry[]): LeaderboardEntry[] {
 
 function serialize(entries: LeaderboardEntry[]): string {
   return entries
-    .map((e) => `${e.prenom}|${e.score}|${e.temps}|${e.erreurs}|${e.date}`)
+    .map((e) => `${e.pseudo}|${e.score}|${e.temps}|${e.erreurs}|${e.date}`)
     .join("§");
 }
 
@@ -85,7 +85,7 @@ function setSnapshot(entries: LeaderboardEntry[]): boolean {
   return true;
 }
 
-// ── Hydration cache (paint-quick only) ─────────────────────────────────────
+// ── Hydration cache (paint hint only) ──────────────────────────────────────
 
 function hydrateFromLocal(): void {
   if (didHydrate || typeof window === "undefined") return;
@@ -105,7 +105,6 @@ function hydrateFromLocal(): void {
 function persistHydration(entries: LeaderboardEntry[]): void {
   if (typeof window === "undefined") return;
   try {
-    // Cap the cache so a viral leaderboard doesn't bloat storage
     const capped = entries.slice(0, 100);
     window.localStorage.setItem(HYDRATION_CACHE_KEY, JSON.stringify(capped));
   } catch {
@@ -121,7 +120,7 @@ function isRecentDuplicate(entry: LeaderboardEntry): boolean {
     const now = Date.now();
     const raw = window.localStorage.getItem(RECENT_DEDUP_KEY);
     const list = raw ? (JSON.parse(raw) as Array<{ key: string; t: number }>) : [];
-    const key = `${entry.prenom}|${entry.score}|${entry.temps}|${entry.erreurs}`;
+    const key = `${entry.pseudo}|${entry.score}|${entry.temps}|${entry.erreurs}`;
     const fresh = list.filter((x) => now - x.t < RECENT_DEDUP_TTL_MS);
     if (fresh.some((x) => x.key === key)) return true;
     fresh.push({ key, t: now });
@@ -135,9 +134,9 @@ function isRecentDuplicate(entry: LeaderboardEntry): boolean {
 // ── Validation ─────────────────────────────────────────────────────────────
 
 function isPlausible(entry: LeaderboardEntry): boolean {
-  if (typeof entry.prenom !== "string") return false;
-  const prenom = entry.prenom.trim();
-  if (prenom.length === 0 || prenom.length > MAX_PSEUDO_LEN) return false;
+  if (typeof entry.pseudo !== "string") return false;
+  const pseudo = entry.pseudo.trim();
+  if (pseudo.length === 0 || pseudo.length > MAX_PSEUDO_LEN) return false;
   if (!Number.isFinite(entry.score) || entry.score < 0 || entry.score > MAX_SCORE) return false;
   if (!Number.isFinite(entry.temps) || entry.temps < MIN_TIME || entry.temps > MAX_TIME) return false;
   if (!Number.isFinite(entry.erreurs) || entry.erreurs < 0 || entry.erreurs > MAX_ERRORS) return false;
@@ -149,33 +148,52 @@ function isPlausible(entry: LeaderboardEntry): boolean {
 /** Submit a finished-game score to the global leaderboard. */
 export async function saveScore(entry: LeaderboardEntry): Promise<void> {
   if (typeof window === "undefined") return;
-  if (!isPlausible(entry)) return;
-  if (isRecentDuplicate(entry)) return;
+
+  if (!isPlausible(entry)) {
+    // eslint-disable-next-line no-console
+    console.warn("[stk-leaderboard] score rejected by client validation:", entry);
+    return;
+  }
+  if (isRecentDuplicate(entry)) {
+    // eslint-disable-next-line no-console
+    console.warn("[stk-leaderboard] duplicate score skipped (same tuple within 5 min):", entry);
+    return;
+  }
 
   const supabase = getBrowserSupabase();
-  if (!supabase) return; // no backend — silently no-op
+  if (!supabase) {
+    // eslint-disable-next-line no-console
+    console.warn("[stk-leaderboard] no Supabase client — score NOT saved.");
+    return;
+  }
 
   const payload = {
-    prenom: entry.prenom.trim().slice(0, MAX_PSEUDO_LEN),
+    pseudo: entry.pseudo.trim().slice(0, MAX_PSEUDO_LEN),
     score: Math.floor(entry.score),
     temps: Math.floor(entry.temps),
     erreurs: Math.floor(entry.erreurs),
   };
 
+  // eslint-disable-next-line no-console
+  console.log("[stk-leaderboard] inserting score →", payload);
+
   try {
-    const { error } = await supabase.from(LEADERBOARD_TABLE).insert([payload]);
+    const { data, error, status } = await supabase
+      .from(LEADERBOARD_TABLE)
+      .insert([payload])
+      .select();
+    // eslint-disable-next-line no-console
+    console.log("[stk-leaderboard] insert response:", { status, data, error });
     if (error) {
-      // Surface error in console for debugging; UI remains responsive.
       // eslint-disable-next-line no-console
-      console.warn("[leaderboard] insert failed:", error.message);
+      console.error("[stk-leaderboard] insert failed:", error.message, error);
       return;
     }
-    // Optimistically refresh — realtime will also push the change.
     await refreshFromServer();
     window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.warn("[leaderboard] insert threw:", e);
+    console.error("[stk-leaderboard] insert threw:", e);
   }
 }
 
@@ -192,16 +210,21 @@ async function refreshFromServer(): Promise<LeaderboardEntry[]> {
       return EMPTY;
     }
     try {
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from(LEADERBOARD_TABLE)
-        .select("prenom, score, temps, erreurs, created_at")
+        .select("pseudo, score, temps, erreurs, created_at")
         .order("score", { ascending: false })
         .order("temps", { ascending: true })
         .order("erreurs", { ascending: true })
         .limit(100);
+      // eslint-disable-next-line no-console
+      console.log(
+        "[stk-leaderboard] fetched leaderboard:",
+        { status, count: data?.length ?? 0, hasError: Boolean(error) },
+      );
       if (error) {
         // eslint-disable-next-line no-console
-        console.warn("[leaderboard] read failed:", error.message);
+        console.error("[stk-leaderboard] read failed:", error.message, error);
         return snapshotCache;
       }
       const entries = (data ?? []).map((row) => rowToEntry(row as DbRow));
@@ -218,9 +241,6 @@ async function refreshFromServer(): Promise<LeaderboardEntry[]> {
 /**
  * Resolve the player's exact global rank — even when they're not in the
  * top 100. Returns null if the pseudo has no entry at all.
- *
- * Strategy: pick the player's best row (highest score), then count how
- * many rows beat it on the (score, temps, erreurs) tiebreaker tuple.
  */
 export async function fetchPlayerRank(pseudo: string): Promise<{
   rank: number;
@@ -233,17 +253,20 @@ export async function fetchPlayerRank(pseudo: string): Promise<{
 
   const { data: bestRows, error: bestErr } = await supabase
     .from(LEADERBOARD_TABLE)
-    .select("prenom, score, temps, erreurs, created_at")
-    .eq("prenom", trimmed)
+    .select("pseudo, score, temps, erreurs, created_at")
+    .eq("pseudo", trimmed)
     .order("score", { ascending: false })
     .order("temps", { ascending: true })
     .order("erreurs", { ascending: true })
     .limit(1);
-  if (bestErr || !bestRows || bestRows.length === 0) return null;
+  if (bestErr) {
+    // eslint-disable-next-line no-console
+    console.error("[stk-leaderboard] best-row lookup failed:", bestErr.message);
+    return null;
+  }
+  if (!bestRows || bestRows.length === 0) return null;
   const best = rowToEntry(bestRows[0] as DbRow);
 
-  // Strictly better tuples: score > best.score, OR score==best.score and
-  // temps < best.temps, OR same score+time but erreurs < best.erreurs.
   const { count: betterScore } = await supabase
     .from(LEADERBOARD_TABLE)
     .select("id", { count: "exact", head: true })
@@ -281,16 +304,13 @@ export function getServerScoresSnapshot(): LeaderboardEntry[] {
 export function subscribeToScores(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
 
-  // Initial fetch
   void refreshFromServer().then(() => onChange());
 
-  // Same-tab refresh nudges (e.g. after saveScore)
   const localHandler = () => {
     void refreshFromServer().then(() => onChange());
   };
   window.addEventListener(CHANGE_EVENT, localHandler);
 
-  // Supabase realtime — every player gets new rows pushed
   const supabase = getBrowserSupabase();
   let unsubscribeRealtime: (() => void) | null = null;
   if (supabase) {
@@ -300,10 +320,15 @@ export function subscribeToScores(onChange: () => void): () => void {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: LEADERBOARD_TABLE },
         () => {
+          // eslint-disable-next-line no-console
+          console.log("[stk-leaderboard] realtime INSERT received → refreshing");
           void refreshFromServer().then(() => onChange());
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // eslint-disable-next-line no-console
+        console.log("[stk-leaderboard] realtime channel status:", status);
+      });
     unsubscribeRealtime = () => {
       void supabase.removeChannel(channel);
     };
@@ -315,7 +340,7 @@ export function subscribeToScores(onChange: () => void): () => void {
   };
 }
 
-/** Backwards-compatible export — wipes the hydration cache only. */
+/** Wipes the local hydration cache only. */
 export function clearScores(): void {
   if (typeof window === "undefined") return;
   try {
@@ -333,7 +358,7 @@ function isValidEntry(value: unknown): value is LeaderboardEntry {
   if (typeof value !== "object" || value === null) return false;
   const r = value as Record<string, unknown>;
   return (
-    typeof r.prenom === "string" &&
+    typeof r.pseudo === "string" &&
     typeof r.score === "number" &&
     typeof r.temps === "number" &&
     typeof r.erreurs === "number" &&
