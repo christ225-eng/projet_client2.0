@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Header } from "@/components/layout/Header";
@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/Button";
 import {
+  fetchPlayerRank,
   getScoresSnapshot,
   getServerScoresSnapshot,
   subscribeToScores,
@@ -20,16 +21,16 @@ import { cn } from "@/lib/cn";
 const easeOrganic = [0.22, 1, 0.36, 1] as const;
 
 /**
- * Final scoreboard, modelled on Maquettes/Score.png. Only real, completed
- * runs (level 5 finished) are shown — they were persisted in
- * `localStorage` by PlayClient at the end of the 5th level. No mock,
- * seeded, or demo data is rendered anywhere.
+ * Final scoreboard — backed by Supabase. The list updates live thanks to
+ * the realtime postgres_changes channel wired in `lib/leaderboard.ts`.
  *
  * Tiebreakers (lib/leaderboard.ts → sortScores): score desc → time asc →
  * errors asc.
  *
- * Cross-tab sync: another browser tab finishing a game broadcasts a
- * `storage` event, which we listen to here so the list refreshes live.
+ * The player's rank is shown in two ways:
+ *   • if they're inside the top 100 we highlight their row in the list,
+ *   • we also fetch their exact global rank via `fetchPlayerRank`, which
+ *     works even when they're outside the top 100.
  */
 export default function LeaderboardPage() {
   const pseudo = usePlayerStore((s) => s.pseudo);
@@ -40,12 +41,32 @@ export default function LeaderboardPage() {
   );
 
   // Player highlight: the BEST (highest-scoring) entry matching the
-  // current pseudo. `entries` is already sorted score-desc, so the first
-  // match is also the highest rank — a friendlier highlight than the
-  // "most recent" run when a player has multiple completions.
+  // current pseudo within the visible top 100.
   const myIndexInList = pseudo
     ? entries.findIndex((e) => e.prenom === pseudo)
     : -1;
+
+  // Exact global rank — resolved via a dedicated query so it works past
+  // the top-100 window we display. Re-runs when entries (and therefore
+  // potentially the player's rank) change.
+  const [playerRank, setPlayerRank] = useState<{
+    rank: number;
+    best: LeaderboardEntry;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!pseudo) {
+      setPlayerRank(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchPlayerRank(pseudo).then((res) => {
+      if (!cancelled) setPlayerRank(res);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pseudo, entries.length]);
 
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
@@ -61,6 +82,15 @@ export default function LeaderboardPage() {
             Tous niveaux complétés
           </p>
         </Reveal>
+
+        {playerRank ? (
+          <Reveal delay={0.1}>
+            <PlayerRankBadge
+              rank={playerRank.rank}
+              entry={playerRank.best}
+            />
+          </Reveal>
+        ) : null}
 
         {isEmpty ? (
           <Reveal delay={0.15}>
@@ -93,6 +123,43 @@ export default function LeaderboardPage() {
 
       <Footer minimal />
     </>
+  );
+}
+
+// ── Player rank badge — visible even when outside the top 100 ──────────────
+
+function PlayerRankBadge({
+  rank,
+  entry,
+}: {
+  rank: number;
+  entry: LeaderboardEntry;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: easeOrganic }}
+      className="mt-5 inline-flex items-center gap-3 rounded-full bg-graphite px-4 py-2 text-bone backdrop-blur-sm sm:gap-4 sm:px-5 sm:py-2.5"
+      style={{
+        boxShadow:
+          "0 2px 6px rgba(0,0,0,0.22), 0 16px 36px rgba(0,0,0,0.22)",
+      }}
+    >
+      <span className="text-[10px] tracking-[0.24em] uppercase text-bone/70 sm:text-xs">
+        Votre rang
+      </span>
+      <span className="text-xl font-semibold tabular-nums sm:text-2xl">
+        #{rank}
+      </span>
+      <span aria-hidden className="h-4 w-px bg-bone/30" />
+      <span className="text-sm font-semibold tabular-nums sm:text-base">
+        {entry.score.toLocaleString("fr-FR")}
+      </span>
+      <span className="text-[11px] tabular-nums text-bone/70 sm:text-xs">
+        {formatDuration(entry.temps)} · {entry.erreurs} err.
+      </span>
+    </motion.div>
   );
 }
 
