@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Reveal } from "@/components/motion/Reveal";
 import { LandingCta } from "@/components/ui/LandingCta";
 
@@ -8,7 +7,7 @@ export default function LandingPage() {
     <>
       <Header />
 
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center sm:px-8">
+      <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 pb-16 text-center sm:px-8">
         <Reveal delay={0.1}>
           <p className="text-xs sm:text-sm tracking-[0.28em] uppercase text-clay">
             STK architecture
@@ -35,8 +34,6 @@ export default function LandingPage() {
           <LandingCta href="/pseudo">Lancez l&apos;experience</LandingCta>
         </Reveal>
       </main>
-
-      <Footer />
     </>
   );
 }
